@@ -1,0 +1,85 @@
+This is version 3.0 of Siod, Scheme In One Defun.
+
+It is a small implementation of the Scheme programming language.
+
+George Carrette, May 1, 1994. g...@mitech.com, g...@paradigm.com.
+
+See siod.doc and the source file slib.c for more information.
+
+Building:
+ For Unix: makefile
+ For VMS: descrip.mms or makefile.com
+ For Windows NT: make.bat which invokes MAKEFILE.WNT
+ For Macintosh: See siod.doc for making your Think C project file.
+Running:
+ siod -isiod.scm
+ See siod.doc some standard functions are in the file siod.scm
+
+The files slib.c and sliba.c may serve as a subroutine library to add
+scheme interpreter functionality to any existing program.
+
+Even though this is small, the implementation supports some nice
+features such as arrays, hash tables, and fast/binary data saving and
+restoring. Also included in this release are interfaces to the
+commercial relational databases DIGITAL RDB and Oracle. (See the files
+sql*.c for information on building in these extra features)
+
+This version has been compiled and run personally by me in the
+following environments, with the resulting executable sizes (not stripped):
+
+ - SPARC, SUNOS with GNU cc 73 Kbytes
+ - SPARC, SUNOS with GNU g++ 82 Kbytes
+ - VAX/VMS, VAX C 42 Kbytes
+ - ALPHA/VMS, DEC C 107 Kbytes
+ - MAC-SE/30, THINK C 5.0 55 Kbytes
+ - DECpc AXP 150, WINDOWS NT, Microsoft C 157 Kbytes
+ - 486 PC, WINDOWS NT, Microsoft C 79 Kbytes
+
+Positive reports have come in about other environments such as OS/2 and OSF/1.
+
+Short description:
+
+Siod is a small scheme interpreter with support for:
+
+ - lists, numbers, symbols, strings, arrays.
+ - string and numeric arrays compatible with C types long*,char*,double*.
+ - user-defined datatypes, new types added on fly, with hooks to
+ reading, evaluation, printing, equal, hashing,
+ - c-style I/O including fopen, fclose, fseek, ftell, fread, fwrite.
+ - fast/binary data-structure printing and reading.
+ - hash tables.
+ - C-programmer friendly programming for adding functionality.
+ Lisp arguments are passed as C arguments. No funky stacks
+ or stack pointers to keep track of. No storage management hassles.
+
+Entry in the free database catalog from idiom.berkeley.ca.us
+
+David Muir Sharnoff <free-da...@idiom.berkeley.ca.us>
+
+name: SIOD (Scheme In One Defun/Day)
+version: 3.0
+interface from: C, C++, Scheme
+interface to: Oracle, Digital RDB, flat ascii, flat binary.
+access methods: flat files contain symbolic expression such as hash tables.
+multiuser: yes with commercial DB, no with flat files.
+transactions: yes with commercial DB, no with flat files.
+distributed: yes with commercial DB, no with flat files.
+query language: SQL, any SCHEME program.
+limits: None.
+robustness: ?
+description: This is a scheme interpreter with built-in procedures using
+ the Oracle Call Interface (OCI) and DIGITAL RDB SQL Services.
+ You can use it merely as a flexible database loader/unloader
+ with fast binary flat-file data save/restore. Or you can
+ use it to apply the classic "Symbolic Manipulation" or
+ "Artificial Intelligence" techniques on your data sets.
+ The main-program can be oriented towards batch, character-cell
+ terminal, or Window/GUI.
+references: "Structure and Interpretation of Computer Programs" MIT Press.
+announcements: comp.lang.scheme, comp.databases.rdb, comp.databases.oracle
+bugs: Contact the author.
+requires: C compiler, your favorite commercial DB.
+ports: VMS, WINDOWS NT, UNIX, OS/2, MACINTOSH.
+author: George Carrette <g...@mitech.com>
+how to get: ftp pub/gjc/siod* from ftp.std.com.
+updated: 1994/05/01

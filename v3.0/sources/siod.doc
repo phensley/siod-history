@@ -1,0 +1,746 @@
+
+
+ * COPYRIGHT (c) 1988-1994 BY *
+ * PARADIGM ASSOCIATES INCORPORATED, CAMBRIDGE, MASSACHUSETTS. *
+ * See the source file SLIB.C for more information. *
+
+
+Documentation for Release 3.0 1-MAY-1994, George Carrette
+
+[Release Notes:]
+
+1.4 This release is functionally the same as release 1.3 but has been
+remodularized in response to people who have been encorporating SIOD
+as an interpreted extension language in other systems.
+
+1.5 Added the -g flag to enable mark-and-sweep garbage collection.
+ The default is stop-and-copy. (Note: changed default to mark-and-sweep)
+
+2.0 Set_Repl_Hooks, catch & throw.
+
+2.1 Additions to SIOD.SCM: Backquote, cond.
+
+2.2 User Type extension. Read-Macros. (From C-programmer level).
+
+2.3 save-forms. load with argument t, comment character, faster intern.
+ -o flag gives obarray size. default 100.
+
+2.4 speed up arithmetic and the evaluator. fixes to siod.scm. no_interrupt
+ around calls to C I/O. gen_readr.
+
+2.5 numeric arrays in siod.c
+
+2.6 remodularize .h files, procedure prototypes. gc, eval, print hooks
+ now table-driven.
+
+2.7 hash tables, fasload.
+
+2.8 bug fixes.
+
+2.9 added trace.c, fseek, ftell, some fixes.
+
+3.0 Windows NT port. some cleanups. SQL support, more string stuff.
+ Heap management flexibility, default to mark-and-sweep, suggestions
+ by some code reviewers for comp.sources.unix.
+
+g...@paradigm.com, g...@mitech.com
+George Carrette
+
+
+
+
+Paradigm Associates Inc Phone: 617-492-6079
+29 Putnam Ave, Suite 6
+Cambridge, MA 02138
+
+
+[Files:]
+
+ siod.h Declarations
+ siodp.h private declarations.
+ slib.c scheme library.
+ sliba.c array library.
+ siod.c a main program.
+ trace.c an optional trace package.
+ siod.scm Some scheme code
+ pratt.scm A pratt-parser in scheme.
+ sql_rdb.* DIGITAL RDB SQL SUPPORT
+ sql_oracle.* Oracle Call Interface Support.
+
+
+[Motivation:]
+
+The most obvious thing one should notice is that this lisp implementation
+is extremely small. For example, the resulting binary executable file
+on a VAX/VMS system with /notraceback/nodebug is 17 kilo-bytes.
+
+Small enough to understand, the source file slib.c is 30 kilo-bytes.
+
+Small enough to include in the smallest applications which require
+command interpreters or extension languages.
+
+We also want to be able to run code from the book "Structure and
+Interpretation of Computer Programs."
+
+Techniques used will be familiar to most lisp implementors. Having
+objects be all the same size, and having only two statically allocated
+spaces simplifies and speeds up both consing and gc considerably. the
+MSUBR hack allows for a modular implementation of tail recursion,
+an extension of the FSUBR that is, as far as I know, original.
+The optional stop and copy garbage collector may be selected at runtime.
+
+Error handling is rather crude. A topic taken with machine fault,
+exception handling, tracing, debugging, and state recovery which we
+could cover in detail, but is clearly beyond the scope of this
+implementation. Suffice it to say that if you have a good symbolic
+debugger you can set a break point at "err" and observe in detail all
+the arguments and local variables of the procedures in question, since
+there is no casting of data types. For example, if X is an offending
+or interesting object then examining X->type will give you the type,
+and X->storage_as.cons will show the car and the cdr.
+
+[Invocation:]
+
+siod [-hXXXXX:[N]] [-iXXXXX] [-gX] [-oXXXXX] [-nXXXXX] [-sXXXXX] [-eXXXXX]
+ -h where XXXXX is an integer, to specify the heap size, in obj cells,
+ N is the optional number of heaps limit (default 2).
+ -i where XXXXX is a filename to load before going into the repl loop.
+ -g where X = 1 for stop-and-copy GC, X = 0 for mark-and-sweep.
+ -o where XXXXX is the size of the symbol hash table to use, default 100.
+ -n where XXXXX is the number of preconsed/interned non-negative numbers.
+ -s where XXXXX is the number of bytes of machine recursion stack.
+ -e where XXXXX is an expression to evaluate, then exit.
+
+ Example:
+ siod -isiod.scm -h100000:100
+
+[Garbage Collection:]
+
+There are two storage management techniques which may be chosen at runtime
+by specifying the -g argument flag.
+
+ -g1 is stop-and-copy. This is the simplest and most
+ portable implementation. GC is only done at toplevel.
+ -g0 (the default) is mark-and-sweep. GC is done at any time,
+ required or requested. However, the implementation is not as portable.
+
+If you get strange errors on a machine architecture not listed
+then you may be forced to use -g1 until you investigate and contact
+the author for advise.
+
+Discussion of stop-and-copy follows:
+
+As one can see from the source, garbage collection is really quite an easy
+thing. The procedure gc_relocate is about 25 lines of code, and
+scan_newspace is about 15.
+
+The real tricks in handling garbage collection are (in a copying gc):
+ (1) keeping track of locations containing objects
+ (2) parsing the heap (in the space scanning)
+
+The procedure gc_protect is called once (e.g. at startup) on each
+"global" location which will contain a lisp object.
+
+That leaves the stack. Now, if we had chosen not to use the argument
+and return-value passing mechanism provided by the C-language
+implementation, (also known as the "machine stack" and "machine
+procedure calling mechanism) this lisp would be larger, slower, and
+rather more difficult to read and understand. Furthermore it would be
+considerably more painful to *add* functionality in the way of SUBR's
+to the implementation.
+
+Aside from writing a very machine and compiler specific assembling language
+routine for each C-language implementation, embodying assumptions about
+the placement choices for arguments and local values, etc, we
+are left with the following limitation: "YOU CAN GC ONLY AT TOP-LEVEL"
+
+However, this fits in perfectly with the programming style imposed in
+many user interface implementations including the MIT X-Windows Toolkit.
+In the X Toolkit, a callback or work procedure is not supposed to spend
+much time implementing the action. Therefore it cannot have allocated
+much storage, and the callback trampoline mechanism can post a work
+procedure to call the garbage collector when needed.
+
+Our simple object format makes parsing the heap rather trivial.
+In more complex situations one ends up requiring object headers or markers
+of some kind to keep track of the actual storage lengths of objects
+and what components of objects are lisp pointers.
+
+Because of the usefulness of strings, they were added by default into
+SIOD 2.6. The implementation requires a hook that calls the C library
+memory free procedure when an object is in oldspace and never
+got relocated to newspace. Obviously this slows down the mark-and-sweep
+GC, and removes one of the usual advantages it has over mark-and-sweep.
+
+Discussion of mark-and-sweep follows:
+
+In a mark-and-sweep GC the objects are not relocated. Instead
+one only has to LOOK at objects which are referenced by the argument
+frames and local variables of the underlying (in this case C-coded)
+implementation procedures. If a pointer "LOOKS" like it is a valid
+lisp object (see the procedure mark_locations_array) then it may be marked,
+and the objects it points to may be marked, as being in-use storage which
+is not linked into the freelist in the gc_sweep phase.
+
+Another advantage of the mark_and_sweep storage management technique is
+that only one heap is required.
+
+This main disadvantages are:
+(1) start-up cost to initially link freelist.
+ (can be avoided by more general but slower NEWCELL code).
+(2) does not COMPACT or LOCALIZE the use of storage. This is poor engineering
+ practice in a virtual memory environment.
+(2) the entire heap must be looked at, not just the parts with useful storage.
+
+In general, mark-and-sweep is slower in that it has to look at more
+memory locations for a given heap size, however the heap size can
+be smaller for a given problem being solved. More complex analysis
+is required when READ-ONLY, STATIC, storage spaces are considered.
+Additionally the most sophisticated stop-and-copy storage management
+techniques take into account considerations of object usage temporality.
+
+The technique assumes that all machine registers the GC needs to
+look at will be saved by a setjmp call into the save_regs_gc_mark data.
+
+[Compilation:]
+
+This code (version 2.7) has been compiled and run under the following:
+- SUN-IV, GCC (GNU C)
+- VAX/VMS, VAXC
+- MacIntosh, THINK C 5.0
+
+Earlier versions were compiled and run on the AMIGA, Encore, and 4.3BSD.
+There are reports that the code will also compile and run under MS-DOS.
+
+On all unix machines use (with floating-point flags as needed)
+
+ %cc -O -c siod.c
+ %cc -O -c slib.c
+ %cc -O -c sliba.c
+ %cc -o siod siod.o slib.o sliba.o
+
+If cc doesn't work, try gcc (GNU C, Free Software Foundation, Cambridge MA).
+
+on VAX/VMS:
+
+ $ cc siod
+ $ cc slib
+ $ cc sliba
+ $ link siod,slib,sliba,sys$input:/opt
+ sys$library:vaxcrtl/share
+ $ siod == "$" + F$ENV("DEFAULT") + "SIOD"
+
+on AMIGA 500, ignore warning messages about return value mismatches,
+ %lc siod.c
+ %lc slib.c
+ %lc sliba.c
+ %blink lib:c.o,siod.o,slib.o,sliba.o to siod lib lib:lcm.lib,lib:lc.lib,lib:amiga.lib
+
+in THINK C.
+ The siod project must include siod.c,slib.c,slib.c,sliba.c,siodm.c, ANSI.
+ The compilation option "require prototypes" should be used.
+
+[System:]
+
+The interrupts called SIGINT and SIGFPE by the C runtime system are
+handled by invoking the lisp error procedure. SIGINT is usually caused
+by the CONTROL-C character and SIGFPE by floating point overflow or underflow.
+
+[Syntax:]
+
+The only special characters are the parenthesis and single quote.
+Everything else, besides whitespace of course, will make up a regular token.
+These tokens are either symbols or numbers depending on what they look like.
+Dotted-list notation is not supported on input, only on output.
+
+[Special forms:]
+
+The CAR of a list is evaluated first, if the value is a SUBR of type 9 or 10
+then it is a special form.
+
+(define symbol value) is presently like (set! symbol value).
+
+(define (f . arglist) . body) ==> (define f (lambda arglist . body))
+
+(lambda arglist . body) Returns a closure.
+
+(if pred val1 val2) If pred evaluates to () then val2 is evaluated else val1.
+
+(begin . body) Each form in body is evaluated with the result of the last
+returned.
+
+(set! symbol value) Evaluates value and sets the local or global value of
+the symbol.
+
+(or x1 x2 x3 ...) Returns the first Xn such that Xn evaluated non-().
+
+(and x1 x2 x3 ...) Keeps evaluating Xj until one returns (), or Xn.
+
+(quote form). Input syntax 'form, returns form without evaluation.
+
+(let pairlist . body) Each element in pairlist is (variable value).
+Evaluates each value then sets of new bindings for each of the variables,
+then evaluates the body like the body of a progn. This is actually
+implemented as a macro turning into a let-internal form.
+
+(the-environment) Returns the current lexical environment.
+
+[Macro Special forms:]
+
+If the CAR of a list evaluates to a symbol then the value of that symbol
+is called on a single argument, the original form. The result of this
+application is a new form which is recursively evaluated.
+
+[Built-In functions:]
+
+These are all SUBR's of type 4,5,6,7, taking from 0 to 3 arguments
+with extra arguments ignored, (not even evaluated!) and arguments not
+given defaulting to (). SUBR's of type 8 are lexprs, receiving a list
+of arguments. Order of evaluation of arguments will depend on the
+implementation choice of your system C compiler.
+
+consp cons car cdr set-car! set-cdr!
+
+number? + - * / < > eqv?
+The arithmetic functions all take two arguments.
+
+eq?, pointer objective identity. (Use eqv? for numbers.)
+
+symbolconc, takes symbols as arguments and appends them.
+
+symbol?
+
+symbol-bound? takes an optional environment structure.
+symbol-value also takes optional env.
+set-symbol-value also takes optional env.
+
+env-lookup takes a symbol and an environment structure. If it returns
+non-nil the CAR will be the value of the symbol.
+
+assq
+
+read,print
+
+eval, takes a second argument, an environment.
+
+copy-list. Copies the top level conses in a list.
+
+(apropos) returns a copy of the list of the symbols that have been interned.
+(apropos "m") returns a list of symbols containing "m"
+(apropos "m" "x" ...) returns a list containing "m" and "x" and ...
+
+gc-status, prints out the status of garbage collection services, the
+number of cells allocated and the number of cells free. If given
+a () argument turns gc services off, if non-() turns gc services on.
+In mark-and-sweep storage management mode the argument only turns on
+and off verbosity of GC messages.
+
+gc, does a mark-and-sweep garbage collection. If called with argument nil
+does not print gc messages during the gc.
+
+(allocate-heap) will allocate an additional heap if available.
+
+(gc-info n) returns for n = 0 copying? 1 = n-current-heaps 2 = n-max-heaps
+3 = heap-size 4 = n-free-cells. e.g.
+
+
+
+(set! *after-gc* '(if (< (gc-info 4) 5000) (allocate-heap)))
+
+
+load, given a filename (which must be a symbol, there are no strings)
+will read/eval all the forms in that file. An optional second argument,
+if T causes returning of the forms in the file instead of evaluating them.
+
+save-forms, given a filename and a list of forms, prints the forms to the
+file. 3rd argument is optional, 'a to open the file in append mode.
+
+quit, will exit back to the operating system.
+
+error, takes a symbol as its first argument, prints the pname of this
+as an error message. The second argument (optional) is an offensive
+object. The global variable errobj gets set to this object for later
+observation. If a (*catch 'errobj ...) is in effect then errors throw
+to this tag instead of jumping back to the toplevel read-eval-print loop.
+
+null?, not. are the same thing.
+
+*catch tag exp, Sets up a dynamic catch frame using tag. Then evaluates exp.
+
+*throw tag value, finds the nearest *catch with an EQ tag, and cause it to
+return value.
+
+[Strings]
+
+(number->string x [base]) => "..."
+(string->number "..." [base]) => x
+(read-from-string "....")
+(string-append ...)
+(string-search "token" "string") => () or starting index.
+(substring "string" start end)
+(string-length "foo") => 3
+(string-trim " foo ") => "foo"
+(string-trim-left "foo ") => "foo "
+(string-trim-right " foo") => " foo"
+(string-upcase "foo") => "FOO")
+(string-downcase "FOO") => "foo"
+
+[Procedures in main program siod.c]
+
+cfib is the same as standard-fib. You can time it and compare it with
+standard-fib to get an idea of the overhead of interpretation.
+
+vms-debug invokes the VMS debugger. The one optional argument is
+a string of vms-debugger commands. To show the current call
+stack and then continue execution:
+
+ (vms-debug "set module/all;show calls;go")
+
+Or, to single step and run at the same time:
+
+ (vms-debug "for i=1 to 100 do (STEP);go")
+
+Or, to set up a breakpoint on errors:
+
+ (vms-debug "set module slib;set break err;go")
+
+
+[Utility procedures in siod.scm:]
+
+Shows how to define macros.
+
+cadr,caddr,cdddr,replace,list.
+
+(defvar variable default-value)
+
+And for us old maclisp hackers, setq and defun, and progn, etc.
+
+call-with-current-continuation (Must load siod.scm)
+Implemented in terms of *catch and *throw. So upward continuations
+are not allowed.
+
+A simple backquote (quasi-quote) implementation.
+Must load siod.scm
+
+cond, a macro.
+
+append
+
+nconc
+
+[TRACE]
+
+
+
+(trace procedure1 procedure2 ...)
+(untrace procedure1 procedure2 ...)
+
+
+Note: * trace is an fsubr, and can be used on internal procedures too.
+ * only interpreted procedures (non-subrs) can be traced.
+
+(define (f x)
+ (let ((g (lambda () ...)))
+ (trace g)
+ (g)))
+
+[Advanced I/O]
+
+Efficient binary I/O may be used to save non-cicular data structures.
+See siod.scm for definitions of fasload and fasdump.
+
+(fopen filename mode) => file
+(fclose file)
+(getc file)
+(putc char file)
+
+(fread size file) => string ;; conses a new string.
+(fread string file) => length ;; stores into existing string.
+(fwrite string file)
+
+(fseek file offset direction)
+(ftell file) => offset
+
+Note: By combining the use of fast-print and fast-read with and without
+ the use of tables, with clever use of ftell and fseek, it is possible
+ to implement an efficient database of lisp expressions.
+
+(fast-read table) => expression
+(fast-print expression table)
+
+A table is a list containing 3 elements: (<file> <hash-table> <index>)
+When doing fast-print the index and hash-table are updated as data
+is written to the file. If the index is () then symbol-printing is
+not optimized. fast-read uses just the <hash-table> as a way of
+looking up previously interned symbols that have been assigned
+an index.
+
+[A streams implementation:]
+
+The first thing we must do is decide how to represent a stream.
+There is only one reasonable data structure available to us, the list.
+So we might use (<stream-car> <cache-flag> <cdr-cache> <cdr-procedure>)
+
+the-empty-stream is just ().
+
+empty-stream?
+
+head
+
+tail
+
+cons-stream is a special form. Wraps a lambda around the second argument.
+
+*cons-stream is the low-level constructor used by cons-stream.
+
+fasload, fasldump. Take the obvious arguments, and are implemented
+in terms of fast-read and fast-print.
+
+compile-file.
+
+[Arrays:]
+
+(cons-array size [type]) Where [type] is double, long, string, lisp or nil.
+(aref array index)
+(aset array index value)
+
+fasload and fasdump are effective ways of storing and restoring numeric
+array data.
+
+[Benchmarks:]
+
+A standard-fib procedure is included in siod.scm so that everyone will
+use the same definition in any reports of speed. Make sure the return
+result is correct. use command line argument of
+ %siod -h100000 -isiod.scm
+
+(standard-fib 10) => 55 ; 795 cons work.
+(standard-fib 15) => 610 ; 8877 cons work.
+(standard-fib 20) => 6765 ; 98508 cons work.
+
+[Porting:]
+
+See the #ifdef definition of myruntime, which
+should be defined to return a double float, the number of cpu seconds
+used by the process so far. It uses the the tms_utime slot, and assumes
+a clock cycle of 1/60'th of a second.
+
+If your system or C runtime needs to poll for the interrupt signal
+mechanism to work, then define INTERRUPT_CHECK to be something
+useful.
+
+The STACK_LIMIT and STACK_CHECK macros may need to be conditionized.
+They currently assume stack growth downward in virtual address.
+The subr (%%stack-limit setting non-verbose) may be used to change the
+limits at runtime.
+
+The stack and register marking code used in the mark-and-sweep GC
+is unlikely to work on machines that do not keep the procedure call
+stack in main memory at all times. It is assumed that setjmp saves
+all registers into the jmp_buff data structure.
+
+If the stack is not always aligned (in LISP-PTR sense) then the
+gc_mark_and_sweep procedure will not work properly.
+
+Example, assuming a byte addressed 32-bit pointer machine:
+
+stack_start_ptr: [LISP-PTR(4)]
+ [LISP-PTR(4)]
+ [RANDOM(4)]
+ [RANDOM(2)]
+ [LISP-PTR(4)]
+ [LISP-PTR(4)]
+ [RANDOM(2)]
+ [LISP-PTR(4)]
+ [LISP-PTR(4)]
+stack_end: [LISP-PTR(4)]
+
+As mark_locations goes from start to end it will get off proper alignment
+somewhere in the middle, and therefore the stack marking operation will
+not properly identify some valid lisp pointers.
+
+Fortunately there is an easy fix to this. A more aggressive use of
+our mark_locations procedure will suffice.
+
+For example, say that there might be 2-byte random objects inserted into
+the stack. Then use two calls to mark_locations:
+
+ mark_locations(((char *)stack_start_ptr) + 0,((char *)&stack_end) + 0);
+ mark_locations(((char *)stack_start_ptr) + 2,((char *)&stack_end) + 2);
+
+If we think there might be 1-byte random objects, then 4 calls are required:
+
+ mark_locations(((char *)stack_start_ptr) + 0,((char *)&stack_end) + 0);
+ mark_locations(((char *)stack_start_ptr) + 1,((char *)&stack_end) + 1);
+ mark_locations(((char *)stack_start_ptr) + 2,((char *)&stack_end) + 2);
+ mark_locations(((char *)stack_start_ptr) + 3,((char *)&stack_end) + 3);
+
+
+[Interface to other programs:]
+
+If your main program does not want to actually have a read/eval/print
+loop, and instead wants to do something else entirely, then use
+the routine set_repl_hooks to set up for procedures for:
+
+ * putting the prompt "> " and other info strings to standard output.
+
+ * reading (getting) an expression
+
+ * evaluating an expression
+
+ * printing an expression.
+
+The routine get_eof_val may be called inside your reading procedure
+to return a value that will cause exit from the read/eval/print loop.
+
+In order to call a single C function in the context of the repl loop,
+you can do the following:
+
+int flag = 0;
+
+void my_puts(st)
+ char *st;
+{}
+
+LISP my_reader()
+{if (flag == 1)
+ return(get_eof_val());
+ flag == 1;
+ return(NIL);}
+
+LISP my_eval(x)
+ LISP x;
+{call_my_c_function();
+ return(NIL);}
+
+LISP my_print(x)
+ LISP x;
+{}
+
+do_my_c_function()
+{set_repl_hooks(my_puts,my_read,my_eval,my_print);
+ repl_driver(1, /* or 0 if we do not want lisp's SIGINT handler */
+ 0);}
+
+
+If you need a completely different read-eval-print-loop, for example
+one based in X-Window procedures such as XtAddInput, then you may want to
+have your own input-scanner and utilize a read-from-string kind of
+function.
+
+For example, this main program gets a string using fgets, and
+evaluates the string without printing any information.
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+
+#include "siod.h"
+
+void repl_c_string(char *);
+
+
+
+int main(int argc,char **argv)
+
+{char *local_argv[3];
+ char linebuff[256],*ptr;
+ local_argv[0] = "siod";
+ local_argv[1] = "-h50000";
+ local_argv[2] = "-g0";
+ print_welcome();
+ process_cla(3,local_argv,1);
+
+
+ print_hs_1();
+ init_storage();
+ init_subrs();
+ init_trace();
+
+ while(fgets(linebuff,sizeof(linebuff),stdin))
+ {if (ptr == strchr(linebuff,'\n')) *ptr = 0;
+ repl_c_string(linebuff);}
+
+
+ printf("EXIT\n");}
+
+
+void my_puts(char *st)
+{}
+
+static char *repl_c_string_arg = NULL;
+
+LISP my_read(void)
+{LISP s;
+ if (repl_c_string_arg == NULL)
+ return(get_eof_val());
+ s = strcons(strlen(repl_c_string_arg),repl_c_string_arg);
+ repl_c_string_arg = NULL;
+ return(read_from_string(s));}
+
+LISP my_print(LISP x)
+{}
+
+void repl_c_string(char *str)
+{struct repl_hooks h;
+ h.repl_puts = my_puts;
+ h.repl_read = my_read;
+ h.repl_eval = NULL;
+ h.repl_print = my_print;
+ repl_c_string_arg = str;
+ repl_driver(1,1,&h);}
+
+
+[User Type Extension:]
+
+There are 5 user types currently available. tc_user_1 through tc_user_5.
+If you use them then you must at least tell the garbage collector about
+them. To do this you must have 4 functions,
+ * a user_relocate, takes a object and returns a new copy.
+ * a user_scan, takes an object and calls relocate on its subparts.
+ * a user_mark, takes an object and calls gc_mark on its subparts or
+ it may return one of these to avoid stack growth.
+ * a user_free, takes an object to hack before it gets onto the freelist.
+
+set_gc_hooks(type,
+ user_relocate_fcn,
+ user_scan_fcn,
+ user_mark_fcn,
+ user_free_fcn,
+ &kind_of_gc);
+
+kind_of_gc should be a long. It will receive 0 for mark-and-sweep, 1 for
+stop-and-copy. Therefore set_gc_hooks should be called AFTER process_cla.
+You must specify a relocate function with stop-and-copy. The scan
+function may be NULL if your user types will not have lisp objects in them.
+Under mark-and-sweep the mark function is required but the free function
+may be NULL.
+
+See SIOD.C for a very simple string-append implementation example.
+
+You might also want to extend the printer. This is optional.
+
+set_print_hooks(type,fcn);
+
+The fcn receives the object which should be printed to its second
+argument, a FILE*.
+
+The evaluator may also be extended, with the "application" of user defined
+types following in the manner of an MSUBR.
+
+Lastly there is a simple read macro facility.
+
+void set_read_hooks(char *all_set,char *end_set,
+ LISP (*fcn1)(),LISP (*fcn2)())
+
+All_set is a string of all read macros. end_set are those
+that will end the current token.
+
+The fcn1 will receive the character used to trigger
+it and the struct gen_readio * being read from. It should return a lisp object.
+
+the fnc2 is optional, and is a user hook into the token => lisp object
+conversion.

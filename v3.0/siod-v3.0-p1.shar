@@ -1,0 +1,2847 @@
+#! /bin/sh
+# This is a shell archive. Remove anything before this line, then unpack
+# it by saving it into a file and typing "sh file". To overwrite existing
+# files, type "sh file -c". You can also feed this as standard input via
+# unshar, or by typing "sh <file", e.g.. If this archive is complete, you
+# will see the following message at the end:
+# "End of archive 1 (of 3)."
+# Contents: MANIFEST README descrip.mms make.bat makefile makefile.com
+# makefile.wnt pratt.scm shar.db siod.1 siod.c siod.h siod.opt
+# siod.scm siod.tim siodm.c siodp.h sql_oracle.c sql_oracle.scm
+# sql_rdb.scm trace.c
+# Wrapped by vi...@gw.home.vix.com on Thu May 19 18:48:34 1994
+PATH=/bin:/usr/bin:/usr/ucb ; export PATH
+if test -f 'MANIFEST' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'MANIFEST'\"
+else
+echo shar: Extracting \"'MANIFEST'\" \(889 characters\)
+sed "s/^X//" >'MANIFEST' <<'END_OF_FILE'
+X File Name Archive # Description
+X-----------------------------------------------------------
+X MANIFEST 1 This shipping list
+X README 1
+X descrip.mms 1
+X make.bat 1
+X makefile 1
+X makefile.com 1
+X makefile.wnt 1
+X pratt.scm 1
+X shar.db 1
+X siod.1 1
+X siod.c 1
+X siod.doc 2
+X siod.h 1
+X siod.opt 1
+X siod.scm 1
+X siod.tim 1
+X siodm.c 1
+X siodp.h 1
+X slib.c 3
+X sliba.c 2
+X sql_oracle.c 1
+X sql_oracle.scm 1
+X sql_rdb.c 2
+X sql_rdb.scm 1
+X trace.c 1
+END_OF_FILE
+if test 889 -ne `wc -c <'MANIFEST'`; then
+echo shar: \"'MANIFEST'\" unpacked with wrong size!
+fi
+# end of 'MANIFEST'
+fi
+if test -f 'README' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'README'\"
+else
+echo shar: Extracting \"'README'\" \(3711 characters\)
+sed "s/^X//" >'README' <<'END_OF_FILE'
+XThis is version 3.0 of Siod, Scheme In One Defun.
+X
+XIt is a small implementation of the Scheme programming language.
+X
+XGeorge Carrette, May 1, 1994. g...@mitech.com, g...@paradigm.com.
+X
+XSee siod.doc and the source file slib.c for more information.
+X
+XBuilding:
+X For Unix: makefile
+X For VMS: descrip.mms or makefile.com
+X For Windows NT: make.bat which invokes MAKEFILE.WNT
+X For Macintosh: See siod.doc for making your Think C project file.
+XRunning:
+X siod -isiod.scm
+X See siod.doc some standard functions are in the file siod.scm
+X
+XThe files slib.c and sliba.c may serve as a subroutine library to add
+Xscheme interpreter functionality to any existing program.
+X
+XEven though this is small, the implementation supports some nice
+Xfeatures such as arrays, hash tables, and fast/binary data saving and
+Xrestoring. Also included in this release are interfaces to the
+Xcommercial relational databases DIGITAL RDB and Oracle. (See the files
+Xsql*.c for information on building in these extra features)
+X
+XThis version has been compiled and run personally by me in the
+Xfollowing environments, with the resulting executable sizes (not stripped):
+X
+X - SPARC, SUNOS with GNU cc 73 Kbytes
+X - SPARC, SUNOS with GNU g++ 82 Kbytes
+X - VAX/VMS, VAX C 42 Kbytes
+X - ALPHA/VMS, DEC C 107 Kbytes
+X - MAC-SE/30, THINK C 5.0 55 Kbytes
+X - DECpc AXP 150, WINDOWS NT, Microsoft C 157 Kbytes
+X - 486 PC, WINDOWS NT, Microsoft C 79 Kbytes
+X
+XPositive reports have come in about other environments such as OS/2 and OSF/1.
+X
+XShort description:
+X
+XSiod is a small scheme interpreter with support for:
+X
+X - lists, numbers, symbols, strings, arrays.
+X - string and numeric arrays compatible with C types long*,char*,double*.
+X - user-defined datatypes, new types added on fly, with hooks to
+X reading, evaluation, printing, equal, hashing,
+X - c-style I/O including fopen, fclose, fseek, ftell, fread, fwrite.
+X - fast/binary data-structure printing and reading.
+X - hash tables.
+X - C-programmer friendly programming for adding functionality.
+X Lisp arguments are passed as C arguments. No funky stacks
+X or stack pointers to keep track of. No storage management hassles.
+X
+XEntry in the free database catalog from idiom.berkeley.ca.us
+X
+XDavid Muir Sharnoff <free-da...@idiom.berkeley.ca.us>
+X
+Xname: SIOD (Scheme In One Defun/Day)
+Xversion: 3.0
+Xinterface from: C, C++, Scheme
+Xinterface to: Oracle, Digital RDB, flat ascii, flat binary.
+Xaccess methods: flat files contain symbolic expression such as hash tables.
+Xmultiuser: yes with commercial DB, no with flat files.
+Xtransactions: yes with commercial DB, no with flat files.
+Xdistributed: yes with commercial DB, no with flat files.
+Xquery language: SQL, any SCHEME program.
+Xlimits: None.
+Xrobustness: ?
+Xdescription: This is a scheme interpreter with built-in procedures using
+X the Oracle Call Interface (OCI) and DIGITAL RDB SQL Services.
+X You can use it merely as a flexible database loader/unloader
+X with fast binary flat-file data save/restore. Or you can
+X use it to apply the classic "Symbolic Manipulation" or
+X "Artificial Intelligence" techniques on your data sets.
+X The main-program can be oriented towards batch, character-cell
+X terminal, or Window/GUI.
+Xreferences: "Structure and Interpretation of Computer Programs" MIT Press.
+Xannouncements: comp.lang.scheme, comp.databases.rdb, comp.databases.oracle
+Xbugs: Contact the author.
+Xrequires: C compiler, your favorite commercial DB.
+Xports: VMS, WINDOWS NT, UNIX, OS/2, MACINTOSH.
+Xauthor: George Carrette <g...@mitech.com>
+Xhow to get: ftp pub/gjc/siod* from ftp.std.com.
+Xupdated: 1994/05/01
+END_OF_FILE
+if test 3711 -ne `wc -c <'README'`; then
+echo shar: \"'README'\" unpacked with wrong size!
+fi
+# end of 'README'
+fi
+if test -f 'descrip.mms' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'descrip.mms'\"
+else
+echo shar: Extracting \"'descrip.mms'\" \(2071 characters\)
+sed "s/^X//" >'descrip.mms' <<'END_OF_FILE'
+X! VMS MAKEFILE (using MMS) for SIOD.
+X!
+X! use MMS/MACRO=("LINK_PCA=1") for PCA
+X! use MMS/MACRO=("RELEASE=1") for no debugging.
+X! use MMS/MACRO=("STRIP=1") for no debugging, no symbols.
+X! use MMS/MACRO=("EXTRA=xxx") for extra modules. (sql_rdb for example)
+X
+X.ifdef EXTRA
+XEOBJ = ,$(EXTRA).OBJ
+XCFLAGD = /DEFINE=("INIT_EXTRA=init_$(EXTRA)")
+X.endif
+X
+X.ifdef STRIP
+XCFLAGS = /NODEBUG/OPTIMIZE/LIST/SHOW=(NOSOURCE)$(CFLAGD)
+XLINKFLAGS = /notraceback/exe=$(mms$target_name).exe
+X.else
+X.ifdef RELEASE
+XCFLAGS = /DEBUG=TRACEBACK/OPTIMIZE/LIST/SHOW=(NOSOURCE)$(CFLAGD)
+XLINKFLAGS = /traceback/exe=$(mms$target_name).exe
+X.else
+X.ifdef LINK_PCA
+XCFLAGS = /DEBUG/OPTIMIZE=NOINLINE/LIST/SHOW=(NOSOURCE)$(CFLAGD)
+XLINKFLAGS = /debug=SYS$LIBRARY:PCA$OBJ.OBJ/exe=$(mms$target_name).exe
+X.else
+XCFLAGS = /DEBUG/NOOPTIMIZE/LIST/SHOW=(NOSOURCE)$(CFLAGD)
+XLINKFLAGS = /debug/exe=$(mms$target_name).exe
+X.endif
+X.endif
+X.endif
+X
+XOBJS = siod.obj,slib.obj,sliba.obj,trace.obj
+X
+Xsiod.exe depends_on $(OBJS),siod.opt$(EOBJ)
+X optarg = ",siod.opt/opt"
+X if f$getsyi("SID") .lt. 0 then optarg = ""
+X link$(LINKFLAGS) $(OBJS)'optarg'$(EOBJ)
+X ! re-execute the next line in your superior process:
+X siod == "$" + f$env("DEFAULT") + "SIOD"
+X
+XDISTRIB depends_on siod.shar,siod.1_of_1
+X !(ALL DONE)
+X
+Xsiod.obj depends_on siod.c,siod.h,
+X
+Xslib.obj depends_on slib.c,siod.h,siodp.h
+Xsliba.obj depends_on sliba.c,siod.h,siodp.h
+Xtrace.obj depends_on trace.c,siod.h,siodp.h
+X
+X.ifdef EXTRA
+X$(EXTRA).obj depends_on $(EXTRA).c,siod.h
+X.endif
+X
+XDISTRIB_FILES = MAKEFILE.,README.,SIOD.1,SIOD.C,SIOD.DOC,SIOD.H,SIOD.SCM,\
+XSLIB.C,SIOD.TIM,MAKEFILE.COM,PRATT.SCM,DESCRIP.MMS,SIOD.OPT,\
+XSHAR.DB,SIODP.H,SLIBA.C,SIODM.C,TRACE.C,\
+Xmakefile.wnt,make.bat,sql_oracle.c,sql_oracle.scm,\
+Xsql_rdb.c,sql_rdb.scm
+X
+Xsiod.shar depends_on $(DISTRIB_FILES)
+X minishar siod.shar shar.db
+X
+XSIOD.1_OF_1 depends_on $(DISTRIB_FILES)
+X DEFINE share_max_part_size 500
+X @NTOOLS_DIR:VMS_SHARE "$(DISTRIB_FILES)" SIOD
+X
+Xput_exp depends_on descrip.mms
+X make_put_exp readme,siod.h,siodp.h,siod.c,slib.c,sliba.c,trace.c,\
+Xsiod.doc,siod.tim,pratt.scm,siod.scm,makefile.wnt,make.bat
+END_OF_FILE
+if test 2071 -ne `wc -c <'descrip.mms'`; then
+echo shar: \"'descrip.mms'\" unpacked with wrong size!
+fi
+# end of 'descrip.mms'
+fi
+if test -f 'make.bat' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'make.bat'\"
+else
+echo shar: Extracting \"'make.bat'\" \(32 characters\)
+sed "s/^X//" >'make.bat' <<'END_OF_FILE'
+Xnmake /f MAKEFILE.WNT nodebug=1
+END_OF_FILE
+if test 32 -ne `wc -c <'make.bat'`; then
+echo shar: \"'make.bat'\" unpacked with wrong size!
+fi
+# end of 'make.bat'
+fi
+if test -f 'makefile' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'makefile'\"
+else
+echo shar: Extracting \"'makefile'\" \(557 characters\)
+sed "s/^X//" >'makefile' <<'END_OF_FILE'
+X# If cc doesn't work here, try changing cc to gcc (GNU C)
+X# Note: you can use CC=gcc and CFLAGS= -O -Wall, or CC=g++
+X# You must modify the makefile with CFLAGS = -DINIT_EXTRA=init_xxx_xxx
+X# in order to build with optional features.
+XCC=cc
+XCFLAGS= -O
+X
+Xsiod: siod.o slib.o sliba.o trace.o
+X $(CC) -o siod siod.o slib.o sliba.o trace.o
+Xsiod.o: siod.c siod.h
+X $(CC) $(CFLAGS) -c siod.c
+Xslib.o: slib.c siod.h siodp.h
+X $(CC) $(CFLAGS) -c slib.c
+Xsliba.o: sliba.c siod.h siodp.h
+X $(CC) $(CFLAGS) -c sliba.c
+Xtrace.o: trace.c siod.h siodp.h
+X $(CC) $(CFLAGS) -c trace.c
+END_OF_FILE
+if test 557 -ne `wc -c <'makefile'`; then
+echo shar: \"'makefile'\" unpacked with wrong size!
+fi
+# end of 'makefile'
+fi
+if test -f 'makefile.com' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'makefile.com'\"
+else
+echo shar: Extracting \"'makefile.com'\" \(825 characters\)
+sed "s/^X//" >'makefile.com' <<'END_OF_FILE'
+X$! VMS BUILD PROCEDURE FOR SIOD, ALTERNATIVE TO USING DESCRIP.MMS.
+X$! If P1 = EXTRA then P1 = name of extra module
+X$!
+X$ CFLAGS = ""
+X$ LFLAGS = ""
+X$ optarg = ",siod.opt/opt"
+X$ if f$getsyi("SID") .lt. 0 then optarg = ""
+X$ IF P1 .NES. "EXTRA" THEN GOTO TAG1
+X$ CFLAGS = CFLAGS + "/DEFINE=(""INIT_EXTRA=init_" + f$edit(P2,"LOWERCASE") + -
+X """)"
+X$ OPTARG = OPTARG + "," + P2 + ".OBJ"
+X$ CC'CFLAGS' 'P2'.C
+X$TAG1:
+X$!
+X$ CC'CFLAGS' SLIB.C
+X$ CC'CFLAGS' SLIBA.C
+X$ CC'CFLAGS' SIOD.C
+X$ CC'CFLAGS' TRACE.C
+X$ IF F$EDIT(P2,"UPCASE") .EQS. "SQL_ORACLE" THEN GOTO LINK_WITH_ORACLE
+X$ LINK'LFLAGS' SIOD.OBJ,SLIB.OBJ,SLIBA.OBJ,TRACE.OBJ'OPTARG'
+X$GOTO DEF
+X$LINK_WITH_ORACLE:
+X$ @ORA_RDBMS:LNOCIC SIOD.EXE SIOD.OBJ,SLIB.OBJ,SLIBA.OBJ,-
+XTRACE.OBJ,SQL_ORACLE.OBJ "S"
+X$DEF:
+X$ SIOD == "$" + F$ENV("DEFAULT") + "SIOD"
+END_OF_FILE
+if test 825 -ne `wc -c <'makefile.com'`; then
+echo shar: \"'makefile.com'\" unpacked with wrong size!
+fi
+# end of 'makefile.com'
+fi
+if test -f 'makefile.wnt' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'makefile.wnt'\"
+else
+echo shar: Extracting \"'makefile.wnt'\" \(419 characters\)
+sed "s/^X//" >'makefile.wnt' <<'END_OF_FILE'
+X# Makefile.WNT
+X#
+X# For building SIOD under Windows NT
+X# 04-AUG-93 G...@MITECH.COM
+X
+X!include <ntwin32.mak>
+X
+X.c.obj:
+X $(cc) $(cdebug) $(cflags) $(cvars) $<
+X
+XOBJS = siod.obj slib.obj sliba.obj trace.obj
+X
+Xsiod.exe : $(OBJS)
+X $(link) $(ldebug) $(conflags) -out:siod.exe $(OBJS) $(conlibs)
+X
+Xsiod.obj : siod.c siod.h
+X
+Xslib.obj : slib.c siod.h siodp.h
+X
+Xsliba.obj : sliba.c siod.h siodp.h
+X
+Xtrace.obj : trace.c siod.h siodp.h
+X
+X
+END_OF_FILE
+if test 419 -ne `wc -c <'makefile.wnt'`; then
+echo shar: \"'makefile.wnt'\" unpacked with wrong size!
+fi
+# end of 'makefile.wnt'
+fi
+if test -f 'pratt.scm' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'pratt.scm'\"
+else
+echo shar: Extracting \"'pratt.scm'\" \(6337 characters\)
+sed "s/^X//" >'pratt.scm' <<'END_OF_FILE'
+X;; -*-mode:lisp-*-
+X;;
+X;; A simple Pratt-Parser for SIOD: 2-FEB-90, George Carrette, G...@PARADIGM.COM
+X;; Siod may be obtained by anonymous FTP to FTP.STD.COM
+X;; Look in the directory pub/gjc
+X;;
+X;; COPYRIGHT (c) 1990 BY
+X;; PARADIGM ASSOCIATES INCORPORATED, CAMBRIDGE, MASSACHUSETTS.
+X;; See the source file SLIB.C for more information.
+X;;
+X;;
+X;; Based on a theory of parsing presented in:
+X;;
+X;; Pratt, Vaughan R., ``Top Down Operator Precedence,''
+X;; ACM Symposium on Principles of Programming Languages
+X;; Boston, MA; October, 1973.
+X;;
+X
+X;; The following terms may be useful in deciphering this code:
+X
+X;; NUD -- NUll left Denotation (op has nothing to its left (prefix))
+X;; LED -- LEft Denotation (op has something to left (postfix or infix))
+X
+X;; LBP -- Left Binding Power (the stickiness to the left)
+X;; RBP -- Right Binding Power (the stickiness to the right)
+X;;
+X;;
+X
+X;; Example calls
+X;;
+X;; (pl '(f [ a ] = a + b / c)) => (= (f a) (+ a (/ b c)))
+X;;
+X;; (pl '(if g [ a COMMA b ] then a > b else k * c + a * b))
+X;; => (if (g a b) (> a b) (+ (* k c) (* a b)))
+X;;
+X;; Notes:
+X;;
+X;; This code must be used with siod.scm loaded, in siod version 2.3
+X;;
+X;; For practical use you will want to write some code to
+X;; break up input into tokens.
+X
+X
+X(defvar *eof* (list '*eof*))
+X
+X;;
+X
+X(defun pl (l)
+X ;; parse a list of tokens
+X (setq l (append l '($)))
+X (toplevel-parse (lambda (op arg)
+X (cond ((eq op 'peek)
+X (if l (car l) *eof*))
+X ((eq op 'get)
+X (if l (pop l) *eof*))
+X ((eq op 'unget)
+X (push arg l))))))
+X
+X(defun peek-token (stream)
+X (stream 'peek nil))
+X
+X(defun read-token (stream)
+X (stream 'get nil))
+X
+X(defun unread-token (x stream)
+X (stream 'unget x))
+X
+X(defun toplevel-parse (stream)
+X (if (eq *eof* (peek-token stream))
+X (read-token stream)
+X (parse -1 stream)))
+X
+X(defun value-if-symbol (x)
+X (if (symbol? x)
+X (symbol-value x)
+X x))
+X
+X(defun nudcall (token stream)
+X (if (symbol? token)
+X (if (get token 'nud)
+X ((value-if-symbol (get token 'nud)) token stream)
+X (if (get token 'led)
+X (error 'not-a-prefix-operator token)
+X token)
+X token)
+X token))
+X
+X(defun ledcall (token left stream)
+X ((value-if-symbol (or (and (symbol? token)
+X (get token 'led))
+X (error 'not-an-infix-operator token)))
+X token
+X left
+X stream))
+X
+X
+X(defun lbp (token)
+X (or (and (symbol? token) (get token 'lbp))
+X 200))
+X
+X(defun rbp (token)
+X (or (and (symbol? token) (get token 'rbp))
+X 200))
+X
+X(defvar *parse-debug* nil)
+X
+X(defun parse (rbp-level stream)
+X (if *parse-debug* (print `(parse ,rbp-level)))
+X (defun parse-loop (translation)
+X (if (< rbp-level (lbp (peek-token stream)))
+X (parse-loop (ledcall (read-token stream) translation stream))
+X (begin (if *parse-debug* (print translation))
+X translation)))
+X (parse-loop (nudcall (read-token stream) stream)))
+X
+X(defun header (token)
+X (or (get token 'header) token))
+X
+X(defun parse-prefix (token stream)
+X (list (header token)
+X (parse (rbp token) stream)))
+X
+X(defun parse-infix (token left stream)
+X (list (header token)
+X left
+X (parse (rbp token) stream)))
+X
+X(defun parse-nary (token left stream)
+X (cons (header token) (cons left (prsnary token stream))))
+X
+X(defun parse-matchfix (token left stream)
+X (cons (header token)
+X (prsmatch (or (get token 'match) token)
+X stream)))
+X
+X(defun prsnary (token stream)
+X (defun loop (l)
+X (if (eq? token (peek-token stream))
+X (begin (read-token stream)
+X (loop (cons (parse (rbp token) stream) l)))
+X (reverse l)))
+X (loop (list (parse (rbp token) stream))))
+X
+X(defun prsmatch (token stream)
+X (if (eq? token (peek-token stream))
+X (begin (read-token stream)
+X nil)
+X (begin (defun loop (l)
+X (if (eq? token (peek-token stream))
+X (begin (read-token stream)
+X (reverse l))
+X (if (eq? 'COMMA (peek-token stream))
+X (begin (read-token stream)
+X (loop (cons (parse 10 stream) l)))
+X (error 'comma-or-match-not-found (read-token stream)))))
+X (loop (list (parse 10 stream))))))
+X
+X(defun delim-err (token stream)
+X (error 'illegal-use-of-delimiter token))
+X
+X(defun erb-error (token left stream)
+X (error 'too-many token))
+X
+X(defun premterm-err (token stream)
+X (error 'premature-termination-of-input token))
+X
+X(defmac (defprops form)
+X (defun loop (l result)
+X (if (null? l)
+X `(begin ,@result)
+X (loop (cddr l)
+X `((putprop ',(cadr form) ',(cadr l) ',(car l))
+X ,@result))))
+X (loop (cddr form) nil))
+X
+X
+X(defprops $
+X lbp -1
+X nud premterm-err)
+X
+X(defprops COMMA
+X lbp 10
+X nud delim-err)
+X
+X
+X(defprops ]
+X nud delim-err
+X led erb-err
+X lbp 5)
+X
+X(defprops [
+X nud open-paren-nud
+X led open-paren-led
+X lbp 200)
+X
+X(defprops if
+X nud if-nud
+X rbp 45)
+X
+X(defprops then
+X nud delim-err
+X lbp 5
+X rbp 25)
+X
+X(defprops else
+X nud delim-err
+X lbp 5
+X rbp 25)
+X
+X(defprops -
+X nud parse-prefix
+X led parse-nary
+X lbp 100
+X rbp 100)
+X
+X(defprops +
+X nud parse-prefix
+X led parse-nary
+X lbp 100
+X rbp 100)
+X
+X(defprops *
+X led parse-nary
+X lbp 120)
+X
+X(defprops =
+X led parse-infix
+X lbp 80
+X rbp 80)
+X
+X(defprops **
+X lbp 140
+X rbp 139
+X led parse-infix)
+X
+X(defprops :=
+X led parse-infix
+X lbp 80
+X rbp 80)
+X
+X
+X(defprops /
+X led parse-infix
+X lbp 120
+X rbp 120)
+X
+X(defprops >
+X led parse-infix
+X lbp 80
+X rbp 80)
+X
+X(defprops <
+X led parse-infix
+X lbp 80
+X rbp 80)
+X
+X(defprops >=
+X led parse-infix
+X lbp 80
+X rbp 80)
+X
+X(defprops <=
+X led parse-infix
+X lbp 80
+X rbp 80)
+X
+X(defprops not
+X nud parse-prefix
+X lbp 70
+X rbp 70)
+X
+X(defprops and
+X led parse-nary
+X lbp 65)
+X
+X(defprops or
+X led parse-nary
+X lbp 60)
+X
+X
+X(defun open-paren-nud (token stream)
+X (if (eq (peek-token stream) '])
+X nil
+X (let ((right (prsmatch '] stream)))
+X (if (cdr right)
+X (cons 'sequence right)
+X (car right)))))
+X
+X(defun open-paren-led (token left stream)
+X (cons (header left) (prsmatch '] stream)))
+X
+X
+X(defun if-nud (token stream)
+X (define pred (parse (rbp token) stream))
+X (define then (if (eq? (peek-token stream) 'then)
+X (parse (rbp (read-token stream)) stream)
+X (error 'missing-then)))
+X (if (eq? (peek-token stream) 'else)
+X `(if ,pred ,then ,(parse (rbp (read-token stream)) stream))
+X `(if ,pred ,then)))
+END_OF_FILE
+if test 6337 -ne `wc -c <'pratt.scm'`; then
+echo shar: \"'pratt.scm'\" unpacked with wrong size!
+fi
+# end of 'pratt.scm'
+fi
+if test -f 'shar.db' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'shar.db'\"
+else
+echo shar: Extracting \"'shar.db'\" \(387 characters\)
+sed "s/^X//" >'shar.db' <<'END_OF_FILE'
+XREADME
+X! the source
+Xsiod.h
+Xsiodp.h
+Xsiod.c
+Xslib.c
+Xsliba.c
+Xsiodm.c
+Xtrace.c
+X! documentation
+Xsiod.doc
+Xsiod.tim
+X! lisp code
+Xpratt.scm
+Xsiod.scm
+X! unix-specific
+Xmakefile
+Xsiod.1
+X! vms-specific
+Xmakefile.com
+Xdescrip.mms
+Xsiod.opt
+X! windows-nt-specific
+Xmakefile.wnt
+Xmake.bat
+X! Oracle Database Interface
+Xsql_oracle.c
+Xsql_oracle.scm
+X! DIGITAL RDB Interface.
+Xsql_rdb.c
+Xsql_rdb.scm
+X! this file:
+Xshar.db
+END_OF_FILE
+if test 387 -ne `wc -c <'shar.db'`; then
+echo shar: \"'shar.db'\" unpacked with wrong size!
+fi
+# end of 'shar.db'
+fi
+if test -f 'siod.1' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'siod.1'\"
+else
+echo shar: Extracting \"'siod.1'\" \(2247 characters\)
+sed "s/^X//" >'siod.1' <<'END_OF_FILE'
+X.TH SIOD 1C LOCAL
+X.SH NAME
+Xsiod \- small scheme interpreter (Scheme In One Defun).
+X.SH SYNOPSIS
+X.B siod
+X[-hXXXXX] [-iXXXXX] [-gX] [-oXXXXX] [-nXXXX] [-eXXXX]
+X.SH DESCRIPTION
+X.I Siod
+Xis a very small scheme interpreter which can be used for calculations
+Xor included as a command interpreter or extension/macro language in other
+Xapplications. See the documentation for interfacing requirements and how to
+Xadd user-defined data types.
+X
+X.RE
+X.SS COMMAND LINE OPTIONS
+X.TP 8
+X.BI \-h "XXXXX"
+XThe
+X.I XXXXX
+Xshould be an integer, specifying the number of cons cells to
+Xallocate in the heap. The default is 5000. Or an integer followed by
+Xa colon, the number after which gives the maximum number of heaps to
+Xmalloc with mark and sweep gc mode.
+X.TP
+X.BI \-i "XXXXX"
+XThe
+X.I XXXXX
+Xshould be the name of an init file to load before going into
+Xthe read/eval/print loop.
+X.TP
+X.BI \-g "X"
+XThe
+X.I X
+Xis 1 for a stop and copy garbage collector, 0 for a mark
+Xand sweep one (the default).
+X.TP
+X.BI \-o "XXXXX"
+XThe
+X.I XXXXX
+Xshould be an integer, specifying the size of the obarray (symbol hash table)
+Xto use. Defaults to 100. Each array element is a list of symbols.
+X.TP
+X.BI \-n "XXXXX"
+XThe
+X.I XXXXX
+Xshould be an integer, specifying the number of pre-cons numbers
+Xto create. The default is 100.
+X.TP
+X.BI \-s "XXXXX"
+XThe
+X.I XXXXX
+Xshould be an integer, specifying the number of bytes of recursion
+Xon the machine (C-call frame) stack to allow. This may be changed
+Xwhile the programming is running, and is mainly a convenience for
+Xdetecting defects in programs.
+X.TP
+X.BI \-e "XXXXX"
+XThe
+X.I XXXXX
+Xis an expression to evaluate (after loading the init file, if any).
+XAfter evaluating the expression the program will exit.
+X
+X.SH FILES
+Xsiod.h siod.doc siod.scm slib.c sliba.c siod.c siodp.h trace.c
+X.PD
+X.SH SEE ALSO
+X.I Structure and Interpretation of Computer Programs
+X, by Abelson and Sussman, MIT Press.
+X.SH DIAGNOSTICS
+XError messages may also set the variable errobj to the offending object.
+X.SH BUGS
+XWith -g1 it does not GC during EVAL, only before each READ/EVAL/PRINT cycle.
+XIt does GC during EVAL with -g0, but that code may not run without modification
+Xon all architectures.
+X.SH VERSION
+XCurrent version is 3.0, 12-MAR-94, by George Carrette. GJC\@PARADIGM.COM
+XGJC\@MITECH.COM
+END_OF_FILE
+if test 2247 -ne `wc -c <'siod.1'`; then
+echo shar: \"'siod.1'\" unpacked with wrong size!
+fi
+# end of 'siod.1'
+fi
+if test -f 'siod.c' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'siod.c'\"
+else
+echo shar: Extracting \"'siod.c'\" \(3491 characters\)
+sed "s/^X//" >'siod.c' <<'END_OF_FILE'
+X/* Scheme In One Defun, but in C this time.
+X
+X * COPYRIGHT (c) 1988-1994 BY *
+X * PARADIGM ASSOCIATES INCORPORATED, CAMBRIDGE, MASSACHUSETTS. *
+X * See the source file SLIB.C for more information. *
+X
+X*/
+X
+X/*
+X
+Xg...@paradigm.com or g...@mitech.com or g...@world.std.com
+X
+XParadigm Associates Inc Phone: 617-492-6079
+X29 Putnam Ave, Suite 6
+XCambridge, MA 02138
+X
+XAn example main-program call with some customized subrs.
+X
+X */
+X
+X#include <stdio.h>
+X#include <stdlib.h>
+X#include <string.h>
+X#ifdef THINK_C
+X#include <console.h>
+X#endif
+X
+X#include "siod.h"
+X
+XLISP my_one;
+XLISP my_two;
+XLISP my_99;
+XLISP my_0;
+X
+X
+XLISP cfib(LISP x);
+XLISP clooptest(LISP x,LISP f);
+X
+X#ifdef VMS
+XLISP vms_debug(LISP cmd);
+X#endif
+X
+X#ifdef WIN32
+X#include <windows.h>
+XLISP win32_debug(void)
+X{DebugBreak();
+X return(NIL);}
+X#endif
+X
+Xint main(int argc,char **argv)
+X{int j,xflag = 0,retval = 0;
+X char *linebuffer = NULL,*ptr;
+X print_welcome();
+X#ifdef THINK_C
+X argc = ccommand(&argv);
+X#endif
+X for(j=1;j<argc;++j)
+X if (strcmp(argv[j],"x") == 0)
+X xflag = 1;
+X else if (strncmp(argv[j],"-e",2) == 0)
+X {xflag = 2;
+X linebuffer = &argv[j][2];}
+X process_cla(argc,argv,(xflag) ? 0 : 1);
+X print_hs_1();
+X init_storage();
+X init_subrs();
+X init_trace();
+X my_one = flocons((double) 1.0);
+X my_two = flocons((double) 2.0);
+X my_99 = flocons((double) 99.0);
+X my_0 = flocons((double) 0.0);
+X gc_protect(&my_one);
+X gc_protect(&my_two);
+X gc_protect(&my_99);
+X gc_protect(&my_0);
+X init_subr_1("cfib",cfib);
+X init_subr_2("cloop-test",clooptest);
+X#ifdef VMS
+X init_subr_1("vms-debug",vms_debug);
+X#endif
+X#ifdef WIN32
+X init_subr_0("win32-debug",win32_debug);
+X#endif
+X#ifdef INIT_EXTRA
+X INIT_EXTRA();
+X#endif
+X switch(xflag)
+X {case 0:
+X retval = repl_driver(1,1,NULL);
+X break;
+X case 1:
+X printf("Using repl_c_string\n");
+X linebuffer = (char *) malloc(256);
+X while(fgets(linebuffer,256,stdin))
+X {if ((ptr = strchr(linebuffer,'\n'))) *ptr = 0;
+X retval = repl_c_string(linebuffer,1,xflag,0);
+X xflag = 0;}
+X break;
+X case 2:
+X retval = repl_c_string(linebuffer,1,xflag,1);
+X break;}
+X printf("EXIT\n");
+X exit(retval);
+X return(0);}
+X
+X/* This is cfib, (compiled fib). Test to see what the overhead
+X of interpretation actually is in a given implementation benchmark
+X standard-fib against cfib.
+X
+X (define (standard-fib x)
+X (if (< x 2)
+X x
+X (+ (standard-fib (- x 1))
+X (standard-fib (- x 2)))))
+X
+X*/
+X
+XLISP cfib(LISP x)
+X{if NNULLP(lessp(x,my_two))
+X return(x);
+X else
+X return(plus(cfib(difference(x,my_one)),
+X cfib(difference(x,my_two))));}
+X
+X/* compiled version of loop-test from siod.scm
+X This won't number-cons for n up to 99 (with default arguments).
+X Another test of overhead of interpretation */
+X
+XLISP clooptest(LISP n,LISP f)
+X{LISP j,k,m,result;
+X j = my_0;
+X result = NIL;
+X while(NNULLP(lessp(j,n)))
+X {j = plus(j,my_one);
+X k = my_0;
+X while(NNULLP(lessp(k,my_99)))
+X {k = plus(k,my_one);
+X m = my_0;
+X while(NNULLP(lessp(m,my_99)))
+X {m = plus(m,my_one);
+X if NNULLP(f) result = cons(NIL,result);}}}
+X return(result);}
+X
+X#ifdef VMS
+X
+X#include <ssdef.h>
+X#include <descrip.h>
+X#include <lib$routines.h>
+X
+XLISP vms_debug(arg)
+X LISP arg;
+X{unsigned char arg1[257];
+X char *data;
+X if NULLP(arg)
+X lib$signal(SS$_DEBUG,0);
+X else
+X {data = get_c_string(arg);
+X arg1[0] = strlen(data);
+X memcpy(&arg1[1],data,arg1[0]);
+X lib$signal(SS$_DEBUG,1,arg1);}
+X return(NIL);}
+X
+X#endif
+END_OF_FILE
+if test 3491 -ne `wc -c <'siod.c'`; then
+echo shar: \"'siod.c'\" unpacked with wrong size!
+fi
+# end of 'siod.c'
+fi
+if test -f 'siod.h' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'siod.h'\"
+else
+echo shar: Extracting \"'siod.h'\" \(7129 characters\)
+sed "s/^X//" >'siod.h' <<'END_OF_FILE'
+X/* Scheme In One Defun, but in C this time.
+X
+X * COPYRIGHT (c) 1988-1994 BY *
+X * PARADIGM ASSOCIATES INCORPORATED, CAMBRIDGE, MASSACHUSETTS. *
+X * See the source file SLIB.C for more information. *
+X
+X*/
+X
+Xstruct obj
+X{short gc_mark;
+X short type;
+X union {struct {struct obj * car;
+X struct obj * cdr;} cons;
+X struct {double data;} flonum;
+X struct {char *pname;
+X struct obj * vcell;} symbol;
+X struct {char *name;
+X struct obj * (*f)(void);} subr0;
+X struct {char *name;
+X struct obj * (*f)(struct obj *);} subr1;
+X struct {char *name;
+X struct obj * (*f)(struct obj *, struct obj *);} subr2;
+X struct {char *name;
+X struct obj * (*f)(struct obj *, struct obj *, struct obj *);
+X } subr3;
+X struct {char *name;
+X struct obj * (*f)(struct obj **, struct obj **);} subrm;
+X struct {char *name;
+X struct obj * (*f)(void *,...);} subr;
+X struct {struct obj *env;
+X struct obj *code;} closure;
+X struct {long dim;
+X long *data;} long_array;
+X struct {long dim;
+X double *data;} double_array;
+X struct {long dim;
+X char *data;} string;
+X struct {long dim;
+X struct obj **data;} lisp_array;
+X struct {FILE *f;
+X char *name;} c_file;}
+X storage_as;};
+X
+X#define CAR(x) ((*x).storage_as.cons.car)
+X#define CDR(x) ((*x).storage_as.cons.cdr)
+X#define PNAME(x) ((*x).storage_as.symbol.pname)
+X#define VCELL(x) ((*x).storage_as.symbol.vcell)
+X#define SUBR0(x) (*((*x).storage_as.subr0.f))
+X#define SUBR1(x) (*((*x).storage_as.subr1.f))
+X#define SUBR2(x) (*((*x).storage_as.subr2.f))
+X#define SUBR3(x) (*((*x).storage_as.subr3.f))
+X#define SUBRM(x) (*((*x).storage_as.subrm.f))
+X#define SUBRF(x) (*((*x).storage_as.subr.f))
+X#define FLONM(x) ((*x).storage_as.flonum.data)
+X
+X#define NIL ((struct obj *) 0)
+X#define EQ(x,y) ((x) == (y))
+X#define NEQ(x,y) ((x) != (y))
+X#define NULLP(x) EQ(x,NIL)
+X#define NNULLP(x) NEQ(x,NIL)
+X
+X#define TYPE(x) (((x) == NIL) ? 0 : ((*(x)).type))
+X
+X#define TYPEP(x,y) (TYPE(x) == (y))
+X#define NTYPEP(x,y) (TYPE(x) != (y))
+X
+X#define tc_nil 0
+X#define tc_cons 1
+X#define tc_flonum 2
+X#define tc_symbol 3
+X#define tc_subr_0 4
+X#define tc_subr_1 5
+X#define tc_subr_2 6
+X#define tc_subr_3 7
+X#define tc_lsubr 8
+X#define tc_fsubr 9
+X#define tc_msubr 10
+X#define tc_closure 11
+X#define tc_free_cell 12
+X#define tc_string 13
+X#define tc_double_array 14
+X#define tc_long_array 15
+X#define tc_lisp_array 16
+X#define tc_c_file 17
+X#define tc_user_1 50
+X#define tc_user_2 51
+X#define tc_user_3 52
+X#define tc_user_4 53
+X#define tc_user_5 54
+X
+X#define tc_sys_1 91
+X#define tc_sys_2 92
+X#define tc_sys_3 93
+X#define tc_sys_4 94
+X#define tc_sys_5 95
+X
+X
+X#define FO_fetch 127
+X#define FO_store 126
+X#define FO_list 125
+X#define FO_listd 124
+X
+X#define tc_table_dim 100
+X
+Xtypedef struct obj* LISP;
+Xtypedef LISP (*SUBR_FUNC)(void);
+X
+X#define CONSP(x) TYPEP(x,tc_cons)
+X#define FLONUMP(x) TYPEP(x,tc_flonum)
+X#define SYMBOLP(x) TYPEP(x,tc_symbol)
+X
+X#define NCONSP(x) NTYPEP(x,tc_cons)
+X#define NFLONUMP(x) NTYPEP(x,tc_flonum)
+X#define NSYMBOLP(x) NTYPEP(x,tc_symbol)
+X
+X#define TKBUFFERN 256
+X
+Xstruct gen_readio
+X{int (*getc_fcn)(char *);
+X void (*ungetc_fcn)(int, char *);
+X char *cb_argument;};
+X
+X#define GETC_FCN(x) (*((*x).getc_fcn))((*x).cb_argument)
+X#define UNGETC_FCN(c,x) (*((*x).ungetc_fcn))(c,(*x).cb_argument)
+X
+Xstruct repl_hooks
+X{void (*repl_puts)(char *);
+X LISP (*repl_read)(void);
+X LISP (*repl_eval)(LISP);
+X void (*repl_print)(LISP);};
+X
+Xvoid process_cla(int argc,char **argv,int warnflag);
+Xvoid print_welcome(void);
+Xvoid print_hs_1(void);
+Xvoid print_hs_2(void);
+Xlong no_interrupt(long n);
+XLISP get_eof_val(void);
+Xlong repl_driver(long want_sigint,long want_init,struct repl_hooks *);
+Xvoid set_repl_hooks(void (*puts_f)(char *),
+X LISP (*read_f)(void),
+X LISP (*eval_f)(LISP),
+X void (*print_f)(LISP));
+Xlong repl(struct repl_hooks *);
+XLISP err(char *message, LISP x);
+XLISP errswitch(void);
+Xchar *get_c_string(LISP x);
+Xlong get_c_long(LISP x);
+XLISP lerr(LISP message, LISP x);
+X
+XLISP newcell(long type);
+XLISP cons(LISP x,LISP y);
+XLISP consp(LISP x);
+XLISP car(LISP x);
+XLISP cdr(LISP x);
+XLISP setcar(LISP cell, LISP value);
+XLISP setcdr(LISP cell, LISP value);
+XLISP flocons(double x);
+XLISP numberp(LISP x);
+XLISP plus(LISP x,LISP y);
+XLISP ltimes(LISP x,LISP y);
+XLISP difference(LISP x,LISP y);
+XLISP quotient(LISP x,LISP y);
+XLISP greaterp(LISP x,LISP y);
+XLISP lessp(LISP x,LISP y);
+XLISP eq(LISP x,LISP y);
+XLISP eql(LISP x,LISP y);
+XLISP symcons(char *pname,LISP vcell);
+XLISP symbolp(LISP x);
+XLISP symbol_boundp(LISP x,LISP env);
+XLISP symbol_value(LISP x,LISP env);
+XLISP cintern(char *name);
+XLISP rintern(char *name);
+XLISP subrcons(long type, char *name, SUBR_FUNC f);
+XLISP closure(LISP env,LISP code);
+Xvoid gc_protect(LISP *location);
+Xvoid gc_protect_n(LISP *location,long n);
+Xvoid gc_protect_sym(LISP *location,char *st);
+X
+Xvoid init_storage(void);
+X
+Xvoid init_subr(char *name, long type, SUBR_FUNC fcn);
+Xvoid init_subr_0(char *name, LISP (*fcn)(void));
+Xvoid init_subr_1(char *name, LISP (*fcn)(LISP));
+Xvoid init_subr_2(char *name, LISP (*fcn)(LISP,LISP));
+Xvoid init_subr_3(char *name, LISP (*fcn)(LISP,LISP,LISP));
+Xvoid init_lsubr(char *name, LISP (*fcn)(LISP));
+Xvoid init_fsubr(char *name, LISP (*fcn)(LISP,LISP));
+Xvoid init_msubr(char *name, LISP (*fcn)(LISP *,LISP *));
+X
+XLISP assq(LISP x,LISP alist);
+XLISP delq(LISP elem,LISP l);
+Xvoid set_gc_hooks(long type,
+X LISP (*rel)(LISP),
+X LISP (*mark)(LISP),
+X void (*scan)(LISP),
+X void (*free)(LISP),
+X long *kind);
+XLISP gc_relocate(LISP x);
+XLISP user_gc(LISP args);
+XLISP gc_status(LISP args);
+Xvoid set_eval_hooks(long type,LISP (*fcn)(LISP, LISP *, LISP *));
+XLISP leval(LISP x,LISP env);
+XLISP symbolconc(LISP args);
+Xvoid set_print_hooks(long type,void (*fcn)(LISP, FILE *));
+XLISP lprin1f(LISP exp,FILE *f);
+XLISP lprint(LISP exp);
+XLISP lread(void);
+XLISP lreadtk(long j);
+XLISP lreadf(FILE *f);
+Xvoid set_read_hooks(char *all_set,char *end_set,
+X LISP (*fcn1)(int, struct gen_readio *),
+X LISP (*fcn2)(char *,long, int *));
+XLISP apropos(LISP);
+XLISP vload(char *fname,long cflag);
+XLISP load(LISP fname,LISP cflag);
+XLISP save_forms(LISP fname,LISP forms,LISP how);
+XLISP quit(void);
+XLISP nullp(LISP x);
+XLISP strcons(long length,char *data);
+XLISP read_from_string(LISP x);
+XLISP aref1(LISP a,LISP i);
+XLISP aset1(LISP a,LISP i,LISP v);
+XLISP cons_array(LISP dim,LISP kind);
+XLISP string_append(LISP args);
+XLISP string_length(LISP string);
+XLISP string_search(LISP,LISP);
+XLISP substring(LISP,LISP,LISP);
+XLISP string_trim(LISP);
+XLISP string_trim_left(LISP);
+XLISP string_trim_right(LISP);
+XLISP string_upcase(LISP);
+XLISP string_downcase(LISP);
+Xvoid init_subrs(void);
+XLISP copy_list(LISP);
+Xlong c_sxhash(LISP,long);
+XLISP sxhash(LISP,LISP);
+XLISP href(LISP,LISP);
+XLISP hset(LISP,LISP,LISP);
+XLISP fast_print(LISP,LISP);
+XLISP fast_read(LISP);
+XLISP equal(LISP,LISP);
+XLISP assoc(LISP x,LISP alist);
+XLISP make_list(LISP x,LISP v);
+Xvoid set_fatal_exit_hook(void (*fcn)(void));
+XLISP parse_number(LISP x);
+XLISP intern(LISP x);
+Xvoid init_trace(void);
+Xlong repl_c_string(char *,long want_sigint,long want_init,long want_print);
+Xchar *siod_version(void);
+XLISP nreverse(LISP);
+XLISP number2string(LISP,LISP);
+XLISP string2number(LISP,LISP);
+END_OF_FILE
+if test 7129 -ne `wc -c <'siod.h'`; then
+echo shar: \"'siod.h'\" unpacked with wrong size!
+fi
+# end of 'siod.h'
+fi
+if test -f 'siod.opt' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'siod.opt'\"
+else
+echo shar: Extracting \"'siod.opt'\" \(98 characters\)
+sed "s/^X//" >'siod.opt' <<'END_OF_FILE'
+XIDENTIFICATION = "SIOD 3.0"
+XPSECT_ATTR=$CHAR_STRING_CONSTANTS,SHR,NOWRT
+Xsys$library:vaxcrtl/share
+END_OF_FILE
+if test 98 -ne `wc -c <'siod.opt'`; then
+echo shar: \"'siod.opt'\" unpacked with wrong size!
+fi
+# end of 'siod.opt'
+fi
+if test -f 'siod.scm' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'siod.scm'\"
+else
+echo shar: Extracting \"'siod.scm'\" \(8080 characters\)
+sed "s/^X//" >'siod.scm' <<'END_OF_FILE'
+X;; SIOD: Scheme In One Defun -*-mode:lisp-*-
+X;;
+X;; * COPYRIGHT (c) 1989-1994 BY *
+X;; * PARADIGM ASSOCIATES INCORPORATED, CAMBRIDGE, MASSACHUSETTS. *
+X;; * See the source file SLIB.C for more information. *
+X
+X(puts ";; Optional Runtime Library for Release 3.0
+X")
+X
+X(set! *after-gc* '(if (< (gc-info 4) 5000) (allocate-heap)))
+X
+X(define list (lambda n n))
+X
+X(define (sublis l exp)
+X (if (cons? exp)
+X (cons (sublis l (car exp))
+X (sublis l (cdr exp)))
+X (let ((cell (assq exp l)))
+X (if cell (cdr cell) exp))))
+X
+X(define (caar x) (car (car x)))
+X(define (cadr x) (car (cdr x)))
+X(define (cdar x) (cdr (car x)))
+X(define (cddr x) (cdr (cdr x)))
+X
+X(define (caddr x) (car (cdr (cdr x))))
+X(define (cdddr x) (cdr (cdr (cdr x))))
+X
+X(define consp pair?)
+X
+X(define (replace before after)
+X (set-car! before (car after))
+X (set-cdr! before (cdr after))
+X after)
+X
+X(define (prognify forms)
+X (if (null? (cdr forms))
+X (car forms)
+X (cons 'begin forms)))
+X
+X(define (defmac-macro form)
+X (let ((sname (car (cadr form)))
+X (argl (cdr (cadr form)))
+X (fname nil)
+X (body (prognify (cddr form))))
+X (set! fname (symbolconc sname '-macro))
+X (list 'begin
+X (list 'define (cons fname argl)
+X (list 'replace (car argl) body))
+X (list 'define sname (list 'quote fname)))))
+X
+X(define defmac 'defmac-macro)
+X
+X(defmac (push form)
+X (list 'set! (caddr form)
+X (list 'cons (cadr form) (caddr form))))
+X
+X(defmac (pop form)
+X (list 'let (list (list 'tmp (cadr form)))
+X (list 'set! (cadr form) '(cdr tmp))
+X '(car tmp)))
+X
+X(defmac (defvar form)
+X (list 'or
+X (list 'symbol-bound? (list 'quote (cadr form)))
+X (list 'define (cadr form) (caddr form))))
+X
+X(defmac (defun form)
+X (cons 'define
+X (cons (cons (cadr form) (caddr form))
+X (cdddr form))))
+X
+X(defmac (setq form)
+X (let ((l (cdr form))
+X (result nil))
+X (define (loop)
+X (if l
+X (begin (push (list 'set! (car l) (cadr l)) result)
+X (set! l (cddr l))
+X (loop))))
+X (loop)
+X (prognify (reverse result))))
+X
+X
+X(define progn begin)
+X
+X(define the-empty-stream ())
+X
+X(define empty-stream? null?)
+X
+X(define (*cons-stream head tail-future)
+X (list head () () tail-future))
+X
+X(define head car)
+X
+X(define (tail x)
+X (if (car (cdr x))
+X (car (cdr (cdr x)))
+X (let ((value ((car (cdr (cdr (cdr x)))))))
+X (set-car! (cdr x) t)
+X (set-car! (cdr (cdr x)) value))))
+X
+X(defmac (cons-stream form)
+X (list '*cons-stream
+X (cadr form)
+X (list 'lambda () (caddr form))))
+X
+X(define (enumerate-interval low high)
+X (if (> low high)
+X the-empty-stream
+X (cons-stream low (enumerate-interval (+ low 1) high))))
+X
+X(define (print-stream-elements x)
+X (if (empty-stream? x)
+X ()
+X (begin (print (head x))
+X (print-stream-elements (tail x)))))
+X
+X(define (sum-stream-elements x)
+X (define (loop acc x)
+X (if (empty-stream? x)
+X acc
+X (loop (+ (head x) acc) (tail x))))
+X (loop 0 x))
+X
+X(define (standard-fib x)
+X (if (< x 2)
+X x
+X (+ (standard-fib (- x 1))
+X (standard-fib (- x 2)))))
+X
+X(define (call-with-current-continuation fcn)
+X (let ((tag (cons nil nil)))
+X (*catch tag
+X (fcn (lambda (value)
+X (*throw tag value))))))
+X
+X(define (loop-test n f)
+X (let ((j 0)
+X (k 0)
+X (m 0)
+X (result nil))
+X (while (< j n)
+X (setq j (+ 1 j))
+X (setq k 0)
+X (while (< k 99)
+X (setq k (+ k 1))
+X (setq m 0)
+X (while (< m 99)
+X (setq m (+ m 1))
+X (if f (setq result (cons nil result))))))
+X result))
+X
+X
+X(defun atom (x)
+X (not (consp x)))
+X
+X(define eq eq?)
+X
+X(defmac (cond form)
+X (cond-convert (cdr form)))
+X
+X(define null null?)
+X
+X(defun cond-convert (l)
+X (if (null l)
+X ()
+X (if (null (cdar l))
+X (if (null (cdr l))
+X (caar l)
+X (let ((rest (cond-convert (cdr l))))
+X (if (and (consp rest) (eq (car rest) 'or))
+X (cons 'or (cons (caar l) (cdr rest)))
+X (list 'or (caar l) rest))))
+X (if (or (eq (caar l) 't)
+X (and (consp (caar l)) (eq (car (caar l)) 'quote)))
+X (prognify (cdar l))
+X (list 'if
+X (caar l)
+X (prognify (cdar l))
+X (cond-convert (cdr l)))))))
+X
+X(defmac (+internal-comma form)
+X (error 'comma-not-inside-backquote))
+X
+X(define +internal-comma-atsign +internal-comma)
+X(define +internal-comma-dot +internal-comma)
+X
+X(defmac (+internal-backquote form)
+X (backquotify (cdr form)))
+X
+X(defun backquotify (x)
+X (let (a d aa ad dqp)
+X (cond ((atom x) (list 'quote x))
+X ((eq (car x) '+internal-comma) (cdr x))
+X ((or (atom (car x))
+X (not (or (eq (caar x) '+internal-comma-atsign)
+X (eq (caar x) '+internal-comma-dot))))
+X (setq a (backquotify (car x)) d (backquotify (cdr x))
+X ad (atom d) aa (atom a)
+X dqp (and (not ad) (eq (car d) 'quote)))
+X (cond ((and dqp (not (atom a)) (eq (car a) 'quote))
+X (list 'quote (cons (cadr a) (cadr d))))
+X ((and dqp (null (cadr d)))
+X (list 'list a))
+X ((and (not ad) (eq (car d) 'list))
+X (cons 'list (cons a (cdr d))))
+X (t (list 'cons a d))))
+X ((eq (caar x) '+internal-comma-atsign)
+X (list 'append (cdar x) (backquotify (cdr x))))
+X ((eq (caar x) '+internal-comma-dot)
+X (list 'nconc (cdar x)(backquotify (cdr x)))))))
+X
+X
+X(defun append n
+X (appendl n))
+X
+X(defun appendl (l)
+X (cond ((null l) nil)
+X ((null (cdr l)) (car l))
+X ((null (cddr l))
+X (append2 (car l) (cadr l)))
+X ('else
+X (append2 (car l) (appendl (cdr l))))))
+X
+X(defun append2 (a b)
+X (if (null a)
+X b
+X (cons (car a) (append2 (cdr a) b))))
+X
+X(defun rplacd (a b)
+X (set-cdr! a b)
+X a)
+X
+X(defun nconc (a b)
+X (if (null a)
+X b
+X (rplacd (last a) b)))
+X
+X
+X(defun last (a)
+X (cond ((null a) (error'null-arg-to-last))
+X ((null (cdr a)) a)
+X ((last (cdr a)))))
+X
+X(define sfib
+X (eval `(lambda (x)
+X (,if (,< x 2)
+X x
+X (,+ (sfib (,- x 1))
+X (sfib (,- x 2)))))))
+X(define sloop-test
+X (eval `(lambda (n f)
+X (let ((j 0)
+X (k 0)
+X (m 0)
+X (result nil))
+X (,while (,< j n)
+X (,set! j (,+ 1 j))
+X (,set! k 0)
+X (,while (,< k 99)
+X (,set! k (,+ k 1))
+X (,set! m 0)
+X (,while (,< m 99)
+X (,set! m (,+ m 1))
+X (,if f (,set! result (,cons () result))))))
+X result))))
+X
+X(defvar *fasdump-hash* t)
+X
+X(defun fasl-open (filename mode)
+X (list (fopen filename mode)
+X (if (or (equal? mode "rb") *fasdump-hash*)
+X (cons-array 100))
+X ;; If this is set NIL, then already hashed symbols will be
+X ;; optimized, and additional ones will not.
+X 0))
+X
+X(defun fasl-close (table)
+X (fclose (car table)))
+X
+X(defun fasload args
+X (let ((filename (car args))
+X (head (and (cadr args) (cons nil nil))))
+X (let ((table (fasl-open filename "rb"))
+X (exp)
+X (tail head))
+X (while (not (eq table (setq exp (fast-read table))))
+X (cond (head
+X (setq exp (cons exp nil))
+X (set-cdr! tail exp)
+X (setq tail exp))
+X ('else
+X (eval exp))))
+X (fasl-close table)
+X (and head (cdr head)))))
+X
+X(defun fasdump (filename forms)
+X (let ((table (fasl-open filename "wb"))
+X (l forms))
+X (while l
+X (fast-print (car l) table)
+X (setq l (cdr l)))
+X (fasl-close table)))
+X
+X(defun compile-file (filename)
+X (let ((forms (load (string-append filename ".scm") t)))
+X (puts "Saving forms
+X")
+X (fasdump (string-append filename ".bin")
+X forms)))
+X
+X(defvar *properties* (cons-array 100))
+X
+X(defun get (sym key)
+X (cdr (assq key (href *properties* sym))))
+X
+X(defun putprop (sym val key)
+X (let ((alist (href *properties* sym)))
+X (let ((cell (assq key alist)))
+X (cond (cell
+X (set-cdr! cell val))
+X ('else
+X (hset *properties* sym (cons (cons key val) alist))
+X val)))))
+X
+X(define (mapcar1 f l1)
+X (and l1 (cons (f (car l1)) (mapcar1 f (cdr l1)))))
+X
+X
+X(define (mapcar2 f l1 l2)
+X (and l1 l2 (cons (f (car l1) (car l2)) (mapcar2 f (cdr l1) (cdr l2)))))
+X
+X(define (mapcar . args)
+X (cond ((null args)
+X (error "too few arguments"))
+X ((null (cdr args))
+X (error "too few arguments"))
+X ((null (cdr (cdr args)))
+X (mapcar1 (car args) (car (cdr args))))
+X ((null (cdr (cdr (cdr args))))
+X (mapcar2 (car args) (car (cdr args)) (car (cdr (cdr args)))))
+X ('else
+X (error "two many arguments"))))
+X
+X
+X(defun addl (l)
+X (let ((sum 0))
+X (while l
+X (setq sum (+ sum (pop l))))
+X sum))
+END_OF_FILE
+if test 8080 -ne `wc -c <'siod.scm'`; then
+echo shar: \"'siod.scm'\" unpacked with wrong size!
+fi
+# end of 'siod.scm'
+fi
+if test -f 'siod.tim' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'siod.tim'\"
+else
+echo shar: Extracting \"'siod.tim'\" \(3875 characters\)
+sed "s/^X//" >'siod.tim' <<'END_OF_FILE'
+XTimings with SIOD version 3.0, Run by G...@MITECH.COM
+X
+XYou can run the benchmark to determine the overhead of interpretation
+Xusing this command line:
+X
+Xsiod -g0 -isiod.scm -h150000 "-e(standard-fib 22)"
+Xsiod -g0 -isiod.scm -h150000 "-e(cfib 22)"
+X
+XDivide the standard-fib (interpreted) by the cfib (compiled) times.
+XShould be about 10 if your machine has reasonable floating point.
+X
+XIf your machine is too fast, try fib of 25 or 30.
+X
+XMachine, OS, Compiler (standard-fib 22) (cfib 22) Ratio
+X-------------------------------------------------------------------
+XDECpc AXP 150, WINDOWS NT, MSC 1.16 0.094 12.3
+XDEC 3000 Model 500, VMS, DEC C 1.2 0.14 8.6
+XSolbourne 6E/900, SUNOS, GNU C 2.3 0.38 6.1
+XINTEL 486-DX2/66, WINDOWS NT, MSC 3.14 0.54 5.8
+XVAXstation 4000-90, VMS, VAX C 3.9 0.35 11.1
+XVAXstation 4000-VLC, VMS, VAX C 16.9 1.64 10.3
+XVAXstation 3200, VMS, VAX C 37.6 3.58 10.5
+XMAC-SE 30, THINK-C 5.0 94.1 49.60 1.9
+XVAXstation 2000, VMS, VAX C 101.9 9.68 10.5
+X---------------------------------------------------------------------
+X
+XOther interesting benchmarks are
+X
+Xsiod -g0 -isiod.scm -h150000 "-e(length (loop-test 4 t))"
+Xsiod -g0 -isiod.scm -h150000 "-e(length (cloop-test 4 t))"
+Xsiod -g0 -isiod.scm -h150000 "-e(loop-test 4 nil))"
+Xsiod -g0 -isiod.scm -h150000 "-e(cloop-test 4 nil))"
+X
+X-----------
+X
+XTimings, SIOD v2.7-2.9
+X
+XMake Model FIB(5) FIB(10) FIB(15) FIB(20) 20/FIB(20)
+XDIGITAL DECpc AXP 150 0.4
+XDIGITAL DEC 3000 500 0.4
+XDIGITAL VAXSTATION-4000/90 0.00 0.01 0.12 1.30
+XSUN 4/690 0.00 0.00 0.10 1.27
+XDIGITAL VS-3200(VMS) 0.01 0.10 1.23 13.6
+X
+X
+XHere are some timings taken with version 1.3 of SIOD. The new version 1.5
+Xis slightly faster. If you do timings it is interesting to try it
+Xwith and without the mark-and-sweep GC, and with various heap sizes.
+X
+XPlease report both total and GC times, heap size, and kinds of GC's used
+Xto: G...@PARADIGM.COM
+X
+XMake Model FIB(5) FIB(10) FIB(15) FIB(20) 20/FIB(20)
+XSun 4 0.00 0.02 0.38 4.2 4.76
+XDIGITAL 8530(VMS) 0.00 0.07 0.78 8.5 2.35
+XSun 3/280 0.00 0.10 0.88 8.5 2.35
+XDIGITAL VS-3200(VMS) 0.01 0.11 1.28 14.2 1.41
+XSun 3/180 0.02 0.15 1.56 17.5 1.14
+XEncore Multimax(NS32) 0.02 0.17 1.85 20.5 0.97
+XDIGITAL VS-2000 0.02 0.30 3.56 39.7 0.50
+XEncore Multimax(NS16) 0.03 0.33 3.63 40.4 0.49
+XAMIGA 500 LATTICE C 0.00 0.00 5.00 55.0(x) 0.36
+X
+XUnix compilations done with the -O flag. All 68020 machines
+Xwith -f68881. Heap size of 120000 used. Timing done with standard-fib
+Xprocedure in siod.scm using SIOD Version 1.3 (which is slightly slower
+Xthan earlier versions). AMIGA 500 FIB(20) time is extrapolated from
+Xthe FIB(15) time.
+X
+XCheck to be sure that your standard-fib returns the following:
+X
+X n FIB(n) Cons Work
+X 5 5 66
+X10 55 795
+X15 610 8877
+X20 6765 98508
+X
+X(Figures above for -n0, no inums)
+X
+X-----------
+X
+Xfib in perl:
+X
+Xsub fib
+X{
+X local($x) = @_;
+X ($x < 2) ? $x : &fib($x-1) + &fib($x-2);
+X}
+X
+Xsub myruntime
+X{
+X local(@t) = times; # in seconds
+X $t[0] + $t[1];
+X}
+X
+X$x = (shift || 20);
+Xprint "Starting fib($x)\n";
+X$before = &myruntime;
+X$y = &fib($x);
+X$after = &myruntime;
+Xprintf("Done. Result $y in %g cpu seconds.\n", $after-$before);
+X
+X fib(20)
+X SIOD Perl Ratio
+XSolbourne 6E/900, SUNOS, GNU C 0.85 6.7,7.9 7.88
+X
+END_OF_FILE
+if test 3875 -ne `wc -c <'siod.tim'`; then
+echo shar: \"'siod.tim'\" unpacked with wrong size!
+fi
+# end of 'siod.tim'
+fi
+if test -f 'siodm.c' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'siodm.c'\"
+else
+echo shar: Extracting \"'siodm.c'\" \(1154 characters\)
+sed "s/^X//" >'siodm.c' <<'END_OF_FILE'
+X/* Code specific to Lightspeed C on MacIntosh.
+X This detects that the character APPLE-DOT is depressed,
+X and then expects that sending a newline to the console
+X will invoke the proper signal handling code.
+X
+X See the file "THINK C 5.0 FOLDER/C LIBRARIES/SOURCES/CONSOLE.C"
+X
+X It would be a good thing to have some code in here that would call
+X the proper inside-mac OS routines to determine allowable machine
+X stack size, because of lack of protection against stack
+X overflow bashing another program.
+X
+X */
+X
+X
+X#include <stdio.h>
+X#include <console.h>
+X
+X#include <MacHeaders>
+X
+Xstatic int interrupt_key_down(void);
+Xvoid full_interrupt_poll(int *counter);
+X
+Xvoid full_interrupt_poll(int *counter)
+X{SystemTask();
+X if (interrupt_key_down())
+X putc('\n',stdout);
+X /* 200 seems to be a good compromise here between
+X interrupt latency and cpu-bound performance */
+X *counter = 200;}
+X
+Xstatic int interrupt_key_down(void)
+X{EvQElPtr l;
+X for(l = (EvQElPtr) EventQueue.qHead; l; l = (EvQElPtr) l->qLink)
+X if ((l->evtQWhat == keyDown) &&
+X ((char) l->evtQMessage == '.') &&
+X (l->evtQModifiers & cmdKey))
+X return(1);
+X return(0);}
+END_OF_FILE
+if test 1154 -ne `wc -c <'siodm.c'`; then
+echo shar: \"'siodm.c'\" unpacked with wrong size!
+fi
+# end of 'siodm.c'
+fi
+if test -f 'siodp.h' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'siodp.h'\"
+else
+echo shar: Extracting \"'siodp.h'\" \(5315 characters\)
+sed "s/^X//" >'siodp.h' <<'END_OF_FILE'
+X/* Scheme In One Defun, but in C this time.
+X
+X * COPYRIGHT (c) 1988-1992 BY *
+X * PARADIGM ASSOCIATES INCORPORATED, CAMBRIDGE, MASSACHUSETTS. *
+X * See the source file SLIB.C for more information. *
+X
+XDeclarations which are private to SLIB.C internals.
+X
+X*/
+X
+X
+Xextern char *tkbuffer;
+Xextern LISP heap,heap_end,heap_org;
+Xextern LISP truth;
+X
+Xstruct user_type_hooks
+X{LISP (*gc_relocate)(LISP);
+X void (*gc_scan)(LISP);
+X LISP (*gc_mark)(LISP);
+X void (*gc_free)(LISP);
+X void (*prin1)(LISP, FILE *);
+X LISP (*leval)(LISP, LISP *, LISP *);
+X long (*c_sxhash)(LISP,long);
+X LISP (*fast_print)(LISP,LISP);
+X LISP (*fast_read)(int,LISP);
+X LISP (*equal)(LISP,LISP);};
+X
+Xstruct catch_frame
+X{LISP tag;
+X LISP retval;
+X jmp_buf cframe;
+X struct catch_frame *next;};
+X
+Xstruct gc_protected
+X{LISP *location;
+X long length;
+X struct gc_protected *next;};
+X
+X#define NEWCELL(_into,_type) \
+X{if (gc_kind_copying == 1) \
+X {if ((_into = heap) >= heap_end) \
+X gc_fatal_error(); \
+X heap = _into+1;} \
+X else \
+X {if NULLP(freelist) \
+X gc_for_newcell(); \
+X _into = freelist; \
+X freelist = CDR(freelist); \
+X ++gc_cells_allocated;} \
+X (*_into).gc_mark = 0; \
+X (*_into).type = (short) _type;}
+X
+X#ifdef THINK_C
+Xextern int ipoll_counter;
+Xvoid full_interrupt_poll(int *counter);
+X#define INTERRUPT_CHECK() if (--ipoll_counter < 0) full_interrupt_poll(&ipoll_counter)
+X#else
+X#define INTERRUPT_CHECK()
+X#endif
+X
+Xextern char *stack_limit_ptr;
+X
+X#define STACK_LIMIT(_ptr,_amt) (((char *)_ptr) - (_amt))
+X
+X#define STACK_CHECK(_ptr) \
+X if (((char *) (_ptr)) < stack_limit_ptr) err_stack((char *) _ptr);
+X
+Xvoid err_stack(char *);
+X
+X#if defined(VMS) && defined(VAX)
+X#define SIG_restargs ,...
+X#else
+X#define SIG_restargs
+X#endif
+X
+Xvoid handle_sigfpe(int sig SIG_restargs);
+Xvoid handle_sigint(int sig SIG_restargs);
+Xvoid err_ctrl_c(void);
+Xdouble myruntime(void);
+Xvoid fput_st(FILE *f,char *st);
+Xvoid put_st(char *st);
+Xvoid grepl_puts(char *,void (*)(char *));
+Xvoid gc_fatal_error(void);
+Xchar *must_malloc(unsigned long size);
+XLISP gen_intern(char *name,long copyp);
+Xvoid scan_registers(void);
+Xvoid init_storage_1(void);
+Xstruct user_type_hooks *get_user_type_hooks(long type);
+XLISP get_newspace(void);
+Xvoid scan_newspace(LISP newspace);
+Xvoid free_oldspace(LISP space,LISP end);
+Xvoid gc_stop_and_copy(void);
+Xvoid gc_for_newcell(void);
+Xvoid gc_mark_and_sweep(void);
+Xvoid gc_ms_stats_start(void);
+Xvoid gc_ms_stats_end(void);
+Xvoid gc_mark(LISP ptr);
+Xvoid mark_protected_registers(void);
+Xvoid mark_locations(LISP *start,LISP *end);
+Xvoid mark_locations_array(LISP *x,long n);
+Xvoid gc_sweep(void);
+XLISP leval_args(LISP l,LISP env);
+XLISP extend_env(LISP actuals,LISP formals,LISP env);
+XLISP envlookup(LISP var,LISP env);
+XLISP setvar(LISP var,LISP val,LISP env);
+XLISP leval_setq(LISP args,LISP env);
+XLISP syntax_define(LISP args);
+XLISP leval_define(LISP args,LISP env);
+XLISP leval_if(LISP *pform,LISP *penv);
+XLISP leval_lambda(LISP args,LISP env);
+XLISP leval_progn(LISP *pform,LISP *penv);
+XLISP leval_or(LISP *pform,LISP *penv);
+XLISP leval_and(LISP *pform,LISP *penv);
+XLISP leval_catch_1(LISP forms,LISP env);
+XLISP leval_catch(LISP args,LISP env);
+XLISP lthrow(LISP tag,LISP value);
+XLISP leval_let(LISP *pform,LISP *penv);
+XLISP reverse(LISP l);
+XLISP let_macro(LISP form);
+XLISP leval_quote(LISP args,LISP env);
+XLISP leval_tenv(LISP args,LISP env);
+Xint flush_ws(struct gen_readio *f,char *eoferr);
+Xint f_getc(FILE *f);
+Xvoid f_ungetc(int c, FILE *f);
+XLISP readtl(struct gen_readio *f);
+XLISP lreadr(struct gen_readio *f);
+XLISP lreadparen(struct gen_readio *f);
+XLISP arglchk(LISP x);
+Xvoid init_storage_a1(long type);
+Xvoid init_storage_a(void);
+XLISP array_gc_relocate(LISP ptr);
+Xvoid array_gc_scan(LISP ptr);
+XLISP array_gc_mark(LISP ptr);
+Xvoid array_gc_free(LISP ptr);
+Xvoid array_prin1(LISP ptr,FILE *f);
+Xlong array_sxhaxh(LISP,long);
+XLISP array_fast_print(LISP,LISP);
+XLISP array_fast_read(int,LISP);
+XLISP array_equal(LISP,LISP);
+Xlong array_sxhash(LISP,long);
+X
+Xint rfs_getc(unsigned char **p);
+Xvoid rfs_ungetc(unsigned char c,unsigned char **p);
+Xvoid err1_aset1(LISP i);
+Xvoid err2_aset1(LISP v);
+XLISP lreadstring(struct gen_readio *f);
+X
+Xvoid file_gc_free(LISP ptr);
+Xvoid file_prin1(LISP ptr,FILE *f);
+XLISP fopen_c(char *name,char *how);
+XLISP fopen_l(LISP name,LISP how);
+XLISP fclose_l(LISP p);
+XFILE *get_c_file(LISP p,FILE *deflt);
+XLISP lgetc(LISP p);
+XLISP lputc(LISP c,LISP p);
+XLISP lputs(LISP str,LISP p);
+X
+XLISP lftell(LISP file);
+XLISP lfseek(LISP file,LISP offset,LISP direction);
+XLISP lfread(LISP size,LISP file);
+XLISP lfwrite(LISP string,LISP file);
+X
+X
+XLISP leval_while(LISP args,LISP env);
+X
+Xvoid init_subrs_a(void);
+Xvoid init_subrs_1(void);
+X
+Xlong href_index(LISP table,LISP key);
+X
+Xvoid put_long(long,FILE *);
+Xlong get_long(FILE *);
+X
+Xlong fast_print_table(LISP obj,LISP table);
+X
+XLISP stack_limit(LISP,LISP);
+X
+X
+Xvoid err0(void);
+Xvoid pr(LISP);
+Xvoid prp(LISP *);
+X
+XLISP closure_code(LISP exp);
+XLISP closure_env(LISP exp);
+XLISP lwhile(LISP form,LISP env);
+XLISP llength(LISP obj);
+Xvoid gc_kind_check(void);
+XLISP allocate_aheap(void);
+Xlong looks_pointerp(LISP);
+Xlong nactive_heaps(void);
+Xlong freelist_length(void);
+XLISP gc_info(LISP);
+END_OF_FILE
+if test 5315 -ne `wc -c <'siodp.h'`; then
+echo shar: \"'siodp.h'\" unpacked with wrong size!
+fi
+# end of 'siodp.h'
+fi
+if test -f 'sql_oracle.c' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'sql_oracle.c'\"
+else
+echo shar: Extracting \"'sql_oracle.c'\" \(15309 characters\)
+sed "s/^X//" >'sql_oracle.c' <<'END_OF_FILE'
+X/*****************************************************************************/
+X/** **/
+X/** Copyright (C) 1992-1994 BY **/
+X/** MITECH CORPORATION, ACTON, MASSACHUSETTS. **/
+X/** ALL RIGHTS RESERVED. **/
+X/** **/
+X/** Permission to use, copy, modify, distribute and sell this software **/
+X/** and its documentation for any purpose and without fee is hereby **/
+X/** granted, provided that the above copyright notice appear in all copies **/
+X/** and that both that copyright notice and this permission notice appear **/
+X/** in supporting documentation, and that the name of Mitech Corporation **/
+X/** not be used in advertising or publicity pertaining to distribution **/
+X/** of the software without specific, written prior permission. **/
+X/** **/
+X/** MITECH DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING **/
+X/** ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL**/
+X/** MITECH BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR **/
+X/** ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, **/
+X/** WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, **/
+X/** ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS **/
+X/** SOFTWARE. **/
+X/** **/
+X/*****************************************************************************/
+X
+X/* Interface from SIOD to Oracle Call Interface.
+X 20-JAN-94 George Carrette. G...@MITECH.COM
+X
+X This was developed some time ago using Oracle 6.0
+X
+XBuilding: Compile siod.c with #define INIT_EXTRA init_sql_oracle.
+X Linking is more complex as Oracle supplies specialized
+X script files. Under VMS it would look something like:
+X
+X$ @ORA_RDBMS:LNOCIC SIOD.EXE SIOD.OBJ,SLIB.OBJ,SLIBA.OBJ,-
+XTRACE.OBJ,SQL_ORACLE.OBJ "S"
+X
+XTO DO: (1) Deal with parameters at LISP type level. The hairy
+X procedure prepare_statement can handle it already.
+X (2) allow more than one oracle login by encapsulating lda and hda
+X and passing them around.
+X
+X*/
+X
+X#include <stdio.h>
+X#include <stdlib.h>
+X#include <string.h>
+X#include <ctype.h>
+X#include <math.h>
+X#include <stdarg.h>
+X
+X#include "siod.h"
+X
+X#define tc_extra tc_user_4
+X#define extra_tc_association 1
+X#define extra_tc_statement 2
+X
+X/* Oracle does not seem to provide any useful .h files for the
+X lda and cursor structures, nor for the data types or symbolic
+X error codes, nor procedure prototypes. All of which makes for a lot
+X of extra work and non-uniformity in the examples provided in the
+X Oracle documentation.
+X*/
+X
+Xstruct lda_def
+X{short v2_rc;
+X unsigned char fill1[10];
+X unsigned short rc;
+X unsigned char fill2[19];
+X unsigned int ose;
+X unsigned char chk;
+X unsigned char sysparm[26];};
+X
+Xstruct cda_def
+X{short v2_rc;
+X short ft;
+X unsigned long rpc;
+X short peo;
+X unsigned char fc;
+X unsigned char fill1;
+X unsigned short rc;
+X unsigned char wrn;
+X unsigned char flg;
+X unsigned int cn;
+X unsigned char rid[13];
+X unsigned int ose;
+X unsigned char chk;
+X unsigned char sysparm[26];};
+X
+Xstruct hda_def
+X{char fill[256];};
+X
+X#define ORACLE_ETYPE_CHAR 1
+X#define ORACLE_ITYPE_NUMBER 2
+X#define ORACLE_ETYPE_INTEGER 3
+X#define ORACLE_ETYPE_FLOAT 4
+X#define ORACLE_ETYPE_STRING 5
+X#define ORACLE_ETYPE_DECIMAL 7
+X#define ORACLE_ETYPE_LONG 8
+X#define ORACLE_ETYPE_VARCHAR 9
+X#define ORACLE_ETYPE_ROWID 11
+X#define ORACLE_ETYPE_DATE 12
+X#define ORACLE_ETYPE_VARRAW 15
+X#define ORACLE_ETYPE_RAW 23
+X#define ORACLE_ETYPE_LONGRAW 24
+X#define ORACLE_ETYPE_UINT 68
+X#define ORACLE_ETYPE_DISPLAY 91
+X
+X#define ORACLE_MAX_STRING 255
+X#define ORA_MAX_SELECTS 20 /* this may be something I made up */
+X
+Xstruct oracle_date
+X{unsigned char century;
+X unsigned char year;
+X unsigned char month;
+X unsigned char day;
+X unsigned char hour;
+X unsigned char minute;
+X unsigned char second;};
+X
+X#define ORA_NO_DATA_FOUND 1403
+X#define ORA_VAR_NOT_IN_SELECT 1007
+X
+X/* This code should be restructured to allocate lda and hda
+X in an association data structure returned by l_orlon */
+X
+Xstatic struct lda_def lda;
+Xstatic struct hda_def hda;
+X
+Xstatic long orlon_ok = 0;
+X
+Xstatic char *errmsg_str0 = NULL;
+Xstatic char *errmsg_str1 = NULL;
+X
+Xstatic long ncursors = 0;
+X
+Xstruct param
+X{short etype;
+X short buflen;
+X char *buf;};
+X
+Xstruct select
+X{char *colnam;
+X short dbtype;
+X short dbsize;
+X short dsize;
+X short etype;
+X short buflen;
+X char *buf;
+X short fetchlenstat;
+X short fetchlen;
+X short fetchcode;};
+X
+Xstruct cstatement
+X{struct cda_def *cursor;
+X long nparams;
+X struct param *params;
+X long nselects;
+X struct select *selects;};
+X
+Xstatic char *errmsg(long code)
+X{char *ptr;
+X if (errmsg_str0 == NULL)
+X {errmsg_str0 = (char *) malloc(ORACLE_MAX_STRING+1);
+X memset(errmsg_str0,0,ORACLE_MAX_STRING+1);}
+X oerhms(&lda,code,errmsg_str0,ORACLE_MAX_STRING);
+X if (ptr = strchr(errmsg_str0,'\n')) *ptr = 0;
+X return(errmsg_str0);}
+X
+Xchar *cda_errmsg(struct cda_def *cur)
+X{return(errmsg(cur->rc));}
+X
+Xchar *lda_errmsg()
+X{return(errmsg(lda.rc));}
+X
+XLISP ferr(LISP obj,char *format, ...)
+X{va_list restargs;
+X if (errmsg_str1 == NULL)
+X {errmsg_str1 = (char *) malloc((ORACLE_MAX_STRING*3)+1);
+X memset(errmsg_str1,0,(ORACLE_MAX_STRING*3)+1);}
+X va_start(restargs,format);
+X vsprintf(errmsg_str1,format,restargs);
+X va_end(restargs);
+X err(errmsg_str1,obj);}
+X
+Xstatic LISP extcons(long length,long typec)
+X{long flag;
+X LISP s;
+X flag = no_interrupt(1);
+X s = cons(NIL,NIL);
+X s->type = tc_extra;
+X s->storage_as.string.data = must_malloc(length);
+X s->storage_as.string.dim = typec;
+X memset(s->storage_as.string.data,0,length);
+X no_interrupt(flag);
+X return(s);}
+X
+Xstruct cda_def *allocate_cursor(void)
+X{struct cda_def *cur;
+X unsigned short rc;
+X cur = (struct cda_def *) malloc(sizeof(struct cda_def));
+X if (oopen(cur,&lda,NULL,-1,-1,NULL,-1))
+X {rc = cur->rc;
+X free(cur);
+X ferr(NIL,"%d cursors so far. oopen:\n%s",
+X ncursors,errmsg(rc));}
+X ++ncursors;
+X return(cur);}
+X
+Xvoid free_cursor(struct cda_def *cur)
+X{long result;
+X unsigned short rc;
+X result = oclose(cur);
+X rc = cur->rc;
+X free(cur);
+X if (result) ferr(NIL,"oclose: %s",errmsg(rc));}
+X
+XLISP l_orlon(LISP username,LISP password)
+X{long retval,flag;
+X char *c_username,*c_password;
+X c_username = get_c_string(username);
+X c_password = NNULLP(password) ? get_c_string(password) : NULL;
+X if (orlon_ok)
+X /* calling orlon twice will corrupt your process badly. */
+X err("already completed orlon",NIL);
+X else
+X {flag = no_interrupt(1);
+X retval = orlon(&lda,&hda,
+X c_username,strlen(c_username),
+X c_password,(c_password) ? strlen(c_password) : -1,
+X 0);
+X no_interrupt(flag);
+X if (lda.rc)
+X ferr(NIL,"orlon: %s",lda_errmsg());
+X else
+X orlon_ok = 1;}
+X return(NIL);}
+X
+XLISP l_ologof(void)
+X{long flag;
+X flag = no_interrupt(1);
+X if (orlon_ok)
+X {ologof(&lda);
+X if (lda.rc)
+X ferr(NIL,"orlon: %s",lda_errmsg());
+X else
+X orlon_ok = 0;}
+X no_interrupt(flag);
+X return(NIL);}
+X
+Xvoid freeloc(void ** x)
+X{if (*x)
+X {free(*x);
+X *x = NULL;}}
+X
+Xvoid release_statement(struct cstatement *c)
+X{long j;
+X if (c->params)
+X {for(j = 1;j <= c->nparams;++j)
+X freeloc(&c->params[j-1].buf);
+X freeloc(&c->params);}
+X if (c->selects)
+X {for(j = 1; j <= c->nselects; ++j)
+X {freeloc(&c->selects[j-1].colnam);
+X freeloc(&c->selects[j-1].buf);}
+X freeloc(&c->selects);}
+X if (c->cursor)
+X free_cursor(c->cursor);
+X c->cursor = NULL;}
+X
+Xvoid prepare_statement(char *sql_str,struct cstatement *c)
+X /* assumptions:
+X nparams gives range of params from :1 to :nparams
+X the user may pre-initialize params with the etypes requested.
+X nselects is correct or -1 */
+X{long j,sflag = 0;
+X short colnamlen;
+X char colnam[ORACLE_MAX_STRING+1];
+X char *err;
+X c->cursor = allocate_cursor();
+X if (osql3(c->cursor,sql_str,-1))
+X {err = cda_errmsg(c->cursor);
+X free_cursor(c->cursor);
+X ferr(NIL,"osql3: %s",err);}
+X if (c->nparams)
+X {if (!c->params)
+X {c->params = (struct param *) malloc(sizeof(struct param) * c->nparams);
+X for(j = 1;j <= c->nparams;++j)
+X {c->params[j-1].etype = 0;
+X c->params[j-1].buf = NULL;}}
+X else
+X for(j = 1;j <= c->nparams;++j)
+X c->params[j-1].buf = NULL;
+X for(j = 1;j <= c->nparams;++j)
+X {switch(c->params[j-1].etype)
+X {case ORACLE_ETYPE_DATE:
+X c->params[j-1].buflen = sizeof(struct oracle_date);
+X c->params[j-1].buf = (char *) malloc(c->params[j-1].buflen);
+X break;
+X default:
+X c->params[j-1].etype = ORACLE_ETYPE_STRING;
+X c->params[j-1].buflen = ORACLE_MAX_STRING;
+X c->params[j-1].buf = (char *) malloc(c->params[j-1].buflen+1);}
+X if (obndrn(c->cursor,j,
+X c->params[j-1].buf,
+X (c->params[j-1].etype == ORACLE_ETYPE_STRING)
+X ? -1 : c->params[j-1].buflen,
+X c->params[j-1].etype,
+X -1,NULL,NULL,-1,-1))
+X {err = cda_errmsg(c->cursor);
+X release_statement(c);
+X ferr(NIL,"obndrn %d: %s",j,err);}}}
+X else
+X c->params = NULL;
+X if (c->nselects)
+X {if (c->nselects < 0)
+X {sflag = 1;
+X c->nselects = ORA_MAX_SELECTS;}
+X c->selects = (struct select *) malloc(sizeof(struct select) * c->nselects);
+X memset(c->selects,0,sizeof(struct select) * c->nselects);
+X for(j = 1; j <= c->nselects; ++j)
+X {colnamlen = ORACLE_MAX_STRING;
+X if (odsc(c->cursor,j,
+X &c->selects[j-1].dbsize,
+X NULL,NULL,
+X &c->selects[j-1].dbtype,
+X colnam,&colnamlen,
+X &c->selects[j-1].dsize))
+X {if ((!sflag) ||
+X (c->cursor->rc != ORA_VAR_NOT_IN_SELECT))
+X {err = cda_errmsg(c->cursor);
+X release_statement(c);
+X ferr(NIL,"odsc %d: %s",j,err);}
+X c->nselects = j-1;}
+X else
+X {colnam[colnamlen] = 0;
+X c->selects[j-1].colnam = (char *) malloc(colnamlen+1);
+X strcpy(c->selects[j-1].colnam,colnam);
+X switch(c->selects[j-1].dbtype)
+X {case ORACLE_ETYPE_INTEGER:
+X case ORACLE_ETYPE_FLOAT:
+X case ORACLE_ITYPE_NUMBER:
+X c->selects[j-1].etype = ORACLE_ETYPE_FLOAT;
+X c->selects[j-1].buflen = sizeof(double);
+X c->selects[j-1].buf = (double *) malloc(c->selects[j-1].buflen);
+X *((double *)c->selects[j-1].buf) = 0.0;
+X break;
+X case ORACLE_ETYPE_DATE:
+X /* If we let Oracle convert to string we loose the time info */
+X c->selects[j-1].etype = ORACLE_ETYPE_DATE;
+X c->selects[j-1].buflen = sizeof(struct oracle_date);
+X c->selects[j-1].buf = (char *) malloc(c->selects[j-1].buflen);
+X break;
+X default:
+X c->selects[j-1].etype = ORACLE_ETYPE_STRING;
+X c->selects[j-1].buflen = ORACLE_MAX_STRING;
+X c->selects[j-1].buf = (char *) malloc(c->selects[j-1].buflen+1);
+X c->selects[j-1].buf[0] = 0;}
+X if (odefin(c->cursor,j,
+X c->selects[j-1].buf,c->selects[j-1].buflen,
+X c->selects[j-1].etype,
+X -1,
+X &c->selects[j-1].fetchlenstat,
+X NULL,-1,-1,
+X &c->selects[j-1].fetchlen,
+X &c->selects[j-1].fetchcode))
+X {err = cda_errmsg(c->cursor);
+X release_statement(c);
+X ferr(NIL,"odefin %d: %s",j,err);}}}
+X if (c->nselects == 0)
+X {free(c->selects);
+X c->selects = NULL;}}
+X else
+X c->selects = NULL;}
+X
+XLISP oracle_sql_prepare(LISP str)
+X{long iflag;
+X LISP result;
+X struct cstatement *c;
+X iflag = no_interrupt(1);
+X result = extcons(sizeof(struct cstatement),extra_tc_statement);
+X c = (struct cstatement *) result->storage_as.string.data;
+X c->nparams = 0;
+X c->nselects = -1;
+X prepare_statement(get_c_string(str),c);
+X no_interrupt(iflag);
+X return(result);}
+X
+Xstatic struct cstatement *get_cstatement(LISP st)
+X{struct cstatement *c;
+X if ((TYPE(st) != tc_extra) ||
+X (st->storage_as.string.dim != extra_tc_statement))
+X err("not a statement",st);
+X c = (struct cstatement *)st->storage_as.string.data;
+X if (!c->cursor)
+X err("statement has been released",st);
+X return(c);}
+X
+XLISP oracle_sql_release(LISP s)
+X{long iflag;
+X iflag = no_interrupt(1);
+X release_statement(get_cstatement(s));
+X no_interrupt(iflag);
+X return(NIL);}
+X
+XLISP oracle_execute(LISP s)
+X{long iflag;
+X struct cstatement *c;
+X iflag = no_interrupt(1);
+X c = get_cstatement(s);
+X if (oexec(c->cursor))
+X ferr(s,"oexec: %s",cda_errmsg(c->cursor));
+X no_interrupt(iflag);
+X return(NIL);}
+X
+XLISP oracle_nselects(LISP s)
+X{return(flocons((get_cstatement(s))->nselects));}
+X
+XLISP oracle_select_column_name(LISP s,LISP n)
+X{long j;
+X struct cstatement *c;
+X j = get_c_long(n);
+X c = get_cstatement(s);
+X if ((j<0) || (j >= c->nselects))
+X err("column index out of range",n);
+X return(rintern(c->selects[j].colnam));}
+X
+Xchar *oracle_date_to_string(struct oracle_date *d)
+X /* make it look like the string returned by RDB SQL Services */
+X{static char buff[100];
+X sprintf(&buff,"%02d%02d%02d%02d%02d%02d%02d00",
+X d->century - 100,d->year - 100,
+X d->month,d->day,
+X d->hour-1,d->minute-1,d->second-1);
+X return(&buff);}
+X
+XLISP oracle_select_column_value(LISP s,LISP n)
+X{long j;
+X struct cstatement *c;
+X struct select *sel;
+X char *str;
+X j = get_c_long(n);
+X c = get_cstatement(s);
+X if ((j<0) || (j >= c->nselects))
+X err("column index out of range",n);
+X sel = &c->selects[j];
+X if (sel->fetchlenstat < 0)
+X return(NIL);
+X switch(sel->etype)
+X {case ORACLE_ETYPE_FLOAT:
+X return(flocons(*((double *)sel->buf)));
+X case ORACLE_ETYPE_DATE:
+X str = oracle_date_to_string(sel->buf);
+X return(strcons(strlen(str),str));
+X case ORACLE_ETYPE_STRING:
+X return(strcons(sel->fetchlen,sel->buf));
+X default:
+X return(errswitch());}}
+X
+XLISP oracle_fetch(LISP s)
+X{long iflag;
+X struct cstatement *c;
+X c = get_cstatement(s);
+X iflag = no_interrupt(1);
+X if (ofetch(c->cursor))
+X {if (c->cursor->rc == ORA_NO_DATA_FOUND)
+X {no_interrupt(iflag);
+X return(NIL);}
+X ferr(s,"fetch: %s",cda_errmsg(c->cursor));}
+X no_interrupt(iflag);
+X return(s);}
+X
+Xstatic void extra_gc_free(LISP ptr)
+X{struct cstatement *c;
+X c = (struct cstatement *) ptr->storage_as.string.data;
+X release_statement(c);
+X free(c);}
+X
+Xstatic void extra_prin1(LISP ptr,FILE *f)
+X{struct cstatement *c;
+X char buff[512];
+X switch(ptr->storage_as.string.dim)
+X {case extra_tc_statement:
+X c = (struct cstatement *) ptr->storage_as.string.data;
+X if (c->cursor)
+X sprintf(buff,"#{SQL STATEMENT %p cursor %d}",
+X c,c->cursor->cn);
+X else
+X sprintf(buff,"#{SQL STATEMENT %p released}",c);
+X fput_st(f,buff);
+X break;
+X default:
+X errswitch();}}
+X
+Xvoid init_sql_oracle(void)
+X{long j;
+X set_gc_hooks(tc_extra,NULL,NULL,NULL,extra_gc_free,&j);
+X set_print_hooks(tc_extra,extra_prin1);
+X init_subr_2("oracle-login",l_orlon);
+X init_subr_0("oracle-logout",l_ologof);
+X init_subr_1("oracle-sql-prepare",oracle_sql_prepare);
+X init_subr_1("oracle-sql-release",oracle_sql_release);
+X init_subr_1("oracle-execute",oracle_execute);
+X init_subr_1("oracle-nselects",oracle_nselects);
+X init_subr_2("oracle-select-column-name",oracle_select_column_name);
+X init_subr_2("oracle-select-column-value",oracle_select_column_value);
+X init_subr_1("oracle-fetch",oracle_fetch);
+X printf("Enhancements (C) Copyright 1994 Mitech Corporation.\n");}
+X
+END_OF_FILE
+if test 15309 -ne `wc -c <'sql_oracle.c'`; then
+echo shar: \"'sql_oracle.c'\" unpacked with wrong size!
+fi
+# end of 'sql_oracle.c'
+fi
+if test -f 'sql_oracle.scm' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'sql_oracle.scm'\"
+else
+echo shar: Extracting \"'sql_oracle.scm'\" \(1927 characters\)
+sed "s/^X//" >'sql_oracle.scm' <<'END_OF_FILE'
+X;;-*-mode:lisp-*-
+X;; For use with the ORACLE CALL INTERFACE (OCI) interface to SIOD.
+X;;
+X;; siod -g0 -h150000 -isql_oracle.scm
+X;;
+X;; Procedures: (oracle-sql-init "username" "password")
+X;; (oracle-sql "string") => result of operation.
+X;; (oracle-show-tables) => list user tables.
+X;;
+X;; Note: This only scratches the surface. There is much more
+X;; functionality available at lisp level that is provided
+X;; by the sql_oracle.c module than is utilized here.
+X;; Contact the author if you need to do something more sophisticated,
+X;; like deal with parameterized sql statements. (Or read the C code).
+X
+X(define *oracle-sql-username* "system")
+X(define *oracle-sql-password* "manager")
+X(define *oracle-sql-association* nil)
+X
+X(define (oracle-sql-init . args)
+X (if (null? *oracle-sql-association*)
+X (begin (oracle-login
+X (or (car args) *oracle-sql-username*)
+X (if (cdr args) (car (cdr args)) *oracle-sql-password*))
+X (set! *oracle-sql-association* t))))
+X
+X(define (unwind-protected l1 l2)
+X (let ((x (*catch 'errobj (l1))))
+X (l2)
+X x))
+X
+X(define (oracle-sql str)
+X (oracle-sql-init)
+X (let ((s nil)
+X (n nil)
+X (j 0)
+X (result nil)
+X (tmp nil))
+X (unwind-protected
+X (lambda ()
+X (set! s (oracle-sql-prepare str))
+X (set! n (oracle-nselects s))
+X (oracle-execute s)
+X (if (> n 0)
+X (begin (while (< j n)
+X (set! tmp (cons (oracle-select-column-name s j) tmp))
+X (set! j (+ 1 j)))
+X (set! result (cons (nreverse tmp) nil))
+X (while (oracle-fetch s)
+X (set! j 0)
+X (set! tmp nil)
+X (while (< j n)
+X (set! tmp (cons (oracle-select-column-value s j) tmp))
+X (set! j (+ 1 j)))
+X (set! result (cons (nreverse tmp) result)))
+X (set! result (nreverse result))))
+X result)
+X (lambda ()
+X (if s (oracle-sql-release s))))))
+X
+X(define (oracle-show-tables)
+X (oracle-sql "select * from user_catalog"))
+END_OF_FILE
+if test 1927 -ne `wc -c <'sql_oracle.scm'`; then
+echo shar: \"'sql_oracle.scm'\" unpacked with wrong size!
+fi
+# end of 'sql_oracle.scm'
+fi
+if test -f 'sql_rdb.scm' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'sql_rdb.scm'\"
+else
+echo shar: Extracting \"'sql_rdb.scm'\" \(3251 characters\)
+sed "s/^X//" >'sql_rdb.scm' <<'END_OF_FILE'
+X;;-*-mode:lisp-*-
+X;; For use with the DIGITAL RDB SQL SERVICES interface to SIOD.
+X;; 20-JAN-94 GJC.
+X;;
+X;; Loading (into siod linked with sql_rdb.obj)
+X;; $siod -g0 -isql_rdb.scm -h150000
+X;;
+X;; Procedures: (rdb-sql-init "database-name")
+X;; (rdb-sql-error?) => last sql error
+X;; (rdb-sql "string") => result of operation.
+X;; (rdb-show-table "table-name") => column information.
+X;; (rdb-show-tables) => list all tables.
+X;;
+X;; Note: This only scratches the surface. There is much more
+X;; functionality available at lisp level that is provided
+X;; by the sql_rdb.c module than is utilized here.
+X;; Contact the author if you need to do something more sophisticated,
+X;; like deal with parameterized sql statements. (Or read the C code).
+X
+X(define *rdb-sql-association* nil)
+X(define *rdb-sql-database* nil)
+X
+X(define (rdb-sql-init db)
+X (if (null? *rdb-sql-association*)
+X (begin (set! *rdb-sql-association* (rdb-sql-associate))
+X (if db
+X (set! *rdb-sql-database* db))
+X (if *rdb-sql-database*
+X (rdb-sql-execute-immediate
+X *rdb-sql-association*
+X (string-append "declare schema filename "
+X *rdb-sql-database*))))))
+X
+X(define (rdb-sql-error?)
+X (rdb-sql-error-buffer *rdb-sql-association*))
+X
+X(define (rdb-sql-cleanup release-associations?)
+X (let ((l (rdb-sql-associations)))
+X (while l
+X (let ((s (rdb-sql-association-statements (car l))))
+X (while s
+X (rdb-sql-release (car s))
+X (set! s (cdr s))))
+X (if release-associations?
+X (rdb-sql-release (car l)))
+X (set! l (cdr l)))))
+X
+X(define (unwind-protected l1 l2)
+X (let ((x (*catch 'errobj (l1))))
+X (l2)
+X x))
+X
+X(define (rdb-sql cmd)
+X (rdb-sql-init nil)
+X (let ((s nil)
+X (p nil)
+X (l nil)
+X (c nil)
+X (result nil)
+X (row nil)
+X (rowp nil)
+X (x nil))
+X (unwind-protected
+X (lambda ()
+X (set! s (rdb-sql-prepare-cached *rdb-sql-association* cmd))
+X (set! p (rdb-sql-statement-params s))
+X (set! l (rdb-sql-statement-selects s))
+X (if p (error "params not implemented"))
+X (if (null? l)
+X (set! result (rdb-sql-execute s))
+X (begin (rdb-sql-declare-cursor s 'table 'read-only)
+X (set! c (rdb-sql-open-cursor s))
+X (while (rdb-sql-fetch s)
+X (set! rowp l)
+X (set! row nil)
+X (while rowp
+X (set! row (cons (rdb-sql-get-column s
+X (car (cdr (car rowp))))
+X row))
+X (set! rowp (cdr rowp)))
+X (set! result (cons (nreverse row) result)))
+X (set! rowp l)
+X (set! row nil)
+X (while rowp
+X (set! row (cons (car (car rowp)) row))
+X (set! rowp (cdr rowp)))
+X (set! result (cons (nreverse row) (nreverse result)))))
+X result)
+X (lambda ()
+X (if c (rdb-sql-close-cursor s))
+X (if s (rdb-sql-release-cached s))))))
+X
+X(define rdb-sql-prepare-cached rdb-sql-prepare)
+X(define rdb-sql-release-cached rdb-sql-release)
+X
+X(define (rdb-show-tables)
+X (rdb-sql "select rdb$relation_name,rdb$system_flag from rdb$relations"))
+X
+X(define (rdb-show-table x)
+X (let ((s nil)
+X (l nil))
+X (unwind-protected
+X (lambda ()
+X (set! s (rdb-sql-prepare *rdb-sql-association*
+X (string-append "select * from " x)))
+X (rdb-describe-statement s)
+X (set! l (rdb-sql-statement-selects s)))
+X (lambda ()
+X (and s (rdb-sql-release s))))))
+END_OF_FILE
+if test 3251 -ne `wc -c <'sql_rdb.scm'`; then
+echo shar: \"'sql_rdb.scm'\" unpacked with wrong size!
+fi
+# end of 'sql_rdb.scm'
+fi
+if test -f 'trace.c' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'trace.c'\"
+else
+echo shar: Extracting \"'trace.c'\" \(3632 characters\)
+sed "s/^X//" >'trace.c' <<'END_OF_FILE'
+X/* COPYRIGHT (c) 1992-1994 BY
+X * MITECH CORPORATION, ACTON, MASSACHUSETTS.
+X * See the source file SLIB.C for more information.
+X
+X(trace procedure1 procedure2 ...)
+X(untrace procedure1 procedure2 ...)
+X
+XCurrently only user-defined procedures can be traced.
+XFancy printing features such as indentation based on
+Xrecursion level will also have to wait for a future version.
+X
+X
+X */
+X
+X#include <stdio.h>
+X#include <setjmp.h>
+X#include "siod.h"
+X#include "siodp.h"
+X
+X#define tc_closure_traced tc_sys_1
+X
+Xstatic LISP sym_traced = NIL;
+Xstatic LISP sym_quote = NIL;
+Xstatic LISP sym_begin = NIL;
+X
+XLISP ltrace_fcn_name(LISP body);
+XLISP ltrace_1(LISP fcn_name,LISP env);
+XLISP ltrace(LISP fcn_names,LISP env);
+XLISP luntrace_1(LISP fcn);
+XLISP luntrace(LISP fcns);
+Xstatic void ct_gc_scan(LISP ptr);
+Xstatic LISP ct_gc_mark(LISP ptr);
+Xvoid ct_prin1(LISP ptr,FILE *f);
+XLISP ct_eval(LISP ct,LISP *px,LISP *penv);
+X
+XLISP ltrace_fcn_name(LISP body)
+X{LISP tmp;
+X if NCONSP(body) return(NIL);
+X if NEQ(CAR(body),sym_begin) return(NIL);
+X tmp = CDR(body);
+X if NCONSP(tmp) return(NIL);
+X tmp = CAR(tmp);
+X if NCONSP(tmp) return(NIL);
+X if NEQ(CAR(tmp),sym_quote) return(NIL);
+X tmp = CDR(tmp);
+X if NCONSP(tmp) return(NIL);
+X return(CAR(tmp));}
+X
+XLISP ltrace_1(LISP fcn_name,LISP env)
+X{LISP fcn,code;
+X fcn = leval(fcn_name,env);
+X switch TYPE(fcn)
+X {case tc_closure:
+X code = fcn->storage_as.closure.code;
+X if NULLP(ltrace_fcn_name(cdr(code)))
+X setcdr(code,cons(sym_begin,
+X cons(cons(sym_quote,cons(fcn_name,NIL)),
+X cons(cdr(code),NIL))));
+X fcn->type = tc_closure_traced;
+X break;
+X case tc_closure_traced:
+X break;
+X default:
+X err("not a closure, cannot trace",fcn);}
+X return(NIL);}
+X
+XLISP ltrace(LISP fcn_names,LISP env)
+X{LISP l;
+X for(l=fcn_names;NNULLP(l);l=cdr(l))
+X ltrace_1(car(l),env);
+X return(NIL);}
+X
+XLISP luntrace_1(LISP fcn)
+X{switch TYPE(fcn)
+X {case tc_closure:
+X break;
+X case tc_closure_traced:
+X fcn->type = tc_closure;
+X break;
+X default:
+X err("not a closure, cannot untrace",fcn);}
+X return(NIL);}
+X
+XLISP luntrace(LISP fcns)
+X{LISP l;
+X for(l=fcns;NNULLP(l);l=cdr(l))
+X luntrace_1(car(l));
+X return(NIL);}
+X
+Xstatic void ct_gc_scan(LISP ptr)
+X{CAR(ptr) = gc_relocate(CAR(ptr));
+X CDR(ptr) = gc_relocate(CDR(ptr));}
+X
+Xstatic LISP ct_gc_mark(LISP ptr)
+X{gc_mark(ptr->storage_as.closure.code);
+X return(ptr->storage_as.closure.env);}
+X
+Xvoid ct_prin1(LISP ptr,FILE *f)
+X{fput_st(f,"#<CLOSURE(TRACED) ");
+X lprin1f(car(ptr->storage_as.closure.code),f);
+X fput_st(f," ");
+X lprin1f(cdr(ptr->storage_as.closure.code),f);
+X fput_st(f,">");}
+X
+XLISP ct_eval(LISP ct,LISP *px,LISP *penv)
+X{LISP fcn_name,args,env,result,l;
+X fcn_name = ltrace_fcn_name(cdr(ct->storage_as.closure.code));
+X args = leval_args(CDR(*px),*penv);
+X fput_st(stdout,"->");
+X lprin1f(fcn_name,stdout);
+X for(l=args;NNULLP(l);l=cdr(l))
+X {fput_st(stdout," ");
+X lprin1f(car(l),stdout);}
+X fput_st(stdout,"\n");
+X env = extend_env(args,
+X car(ct->storage_as.closure.code),
+X ct->storage_as.closure.env);
+X result = leval(cdr(ct->storage_as.closure.code),env);
+X fput_st(stdout,"<-");
+X lprin1f(fcn_name,stdout);
+X fput_st(stdout," ");
+X lprin1f(result,stdout);
+X fput_st(stdout,"\n");
+X *px = result;
+X return(NIL);}
+X
+Xvoid init_trace(void)
+X{long j;
+X set_gc_hooks(tc_closure_traced,
+X NULL,
+X ct_gc_mark,
+X ct_gc_scan,
+X NULL,
+X &j);
+X gc_protect_sym(&sym_traced,"*traced*");
+X setvar(sym_traced,NIL,NIL);
+X gc_protect_sym(&sym_begin,"begin");
+X gc_protect_sym(&sym_quote,"quote");
+X set_print_hooks(tc_closure_traced,ct_prin1);
+X set_eval_hooks(tc_closure_traced,ct_eval);
+X init_fsubr("trace",ltrace);
+X init_lsubr("untrace",luntrace);}
+END_OF_FILE
+if test 3632 -ne `wc -c <'trace.c'`; then
+echo shar: \"'trace.c'\" unpacked with wrong size!
+fi
+# end of 'trace.c'
+fi
+echo shar: End of archive 1 \(of 3\).
+cp /dev/null ark1isdone
+MISSING=""
+for I in 1 2 3 ; do
+if test ! -f ark${I}isdone ; then
+MISSING="${MISSING} ${I}"
+fi
+done
+if test "${MISSING}" = "" ; then
+echo You have unpacked all 3 archives.
+rm -f ark[1-9]isdone
+else
+echo You still need to unpack the following archives:
+echo " " ${MISSING}
+fi
+## End of shell archive.
+exit 0
+

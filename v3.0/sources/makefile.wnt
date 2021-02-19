@@ -1,0 +1,24 @@
+# Makefile.WNT
+#
+# For building SIOD under Windows NT
+# 04-AUG-93 G...@MITECH.COM
+
+!include <ntwin32.mak>
+
+.c.obj:
+ $(cc) $(cdebug) $(cflags) $(cvars) $<
+
+OBJS = siod.obj slib.obj sliba.obj trace.obj
+
+siod.exe : $(OBJS)
+ $(link) $(ldebug) $(conflags) -out:siod.exe $(OBJS) $(conlibs)
+
+siod.obj : siod.c siod.h
+
+slib.obj : slib.c siod.h siodp.h
+
+sliba.obj : sliba.c siod.h siodp.h
+
+trace.obj : trace.c siod.h siodp.h
+
+

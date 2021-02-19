@@ -1,0 +1,33 @@
+README
+! the source
+siod.h
+siodp.h
+siod.c
+slib.c
+sliba.c
+siodm.c
+trace.c
+! documentation
+siod.doc
+siod.tim
+! lisp code
+pratt.scm
+siod.scm
+! unix-specific
+makefile
+siod.1
+! vms-specific
+makefile.com
+descrip.mms
+siod.opt
+! windows-nt-specific
+makefile.wnt
+make.bat
+! Oracle Database Interface
+sql_oracle.c
+sql_oracle.scm
+! DIGITAL RDB Interface.
+sql_rdb.c
+sql_rdb.scm
+! this file:
+shar.db

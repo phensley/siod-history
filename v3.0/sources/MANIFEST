@@ -1,0 +1,27 @@
+ File Name Archive # Description
+-----------------------------------------------------------
+ MANIFEST 1 This shipping list
+ README 1
+ descrip.mms 1
+ make.bat 1
+ makefile 1
+ makefile.com 1
+ makefile.wnt 1
+ pratt.scm 1
+ shar.db 1
+ siod.1 1
+ siod.c 1
+ siod.doc 2
+ siod.h 1
+ siod.opt 1
+ siod.scm 1
+ siod.tim 1
+ siodm.c 1
+ siodp.h 1
+ slib.c 3
+ sliba.c 2
+ sql_oracle.c 1
+ sql_oracle.scm 1
+ sql_rdb.c 2
+ sql_rdb.scm 1
+ trace.c 1

@@ -1,0 +1,2167 @@
+#! /bin/sh
+# This is a shell archive. Remove anything before this line, then unpack
+# it by saving it into a file and typing "sh file". To overwrite existing
+# files, type "sh file -c". You can also feed this as standard input via
+# unshar, or by typing "sh <file", e.g.. If this archive is complete, you
+# will see the following message at the end:
+
+# "End of archive 3 (of 3)."
+# Contents: slib.c
+
+
+# Wrapped by vi...@gw.home.vix.com on Thu May 19 18:48:34 1994
+PATH=/bin:/usr/bin:/usr/ucb ; export PATH
+
+if test -f 'slib.c' -a "${1}" != "-c" ; then
+echo shar: Will not clobber existing file \"'slib.c'\"
+else
+echo shar: Extracting \"'slib.c'\" \(49106 characters\)
+sed "s/^X//" >'slib.c' <<'END_OF_FILE'
+
+
+X/* Scheme In One Defun, but in C this time.
+X
+X * COPYRIGHT (c) 1988-1994 BY *
+X * PARADIGM ASSOCIATES INCORPORATED, CAMBRIDGE, MASSACHUSETTS. *
+
+X * ALL RIGHTS RESERVED *
+X
+XPermission to use, copy, modify, distribute and sell this software
+Xand its documentation for any purpose and without fee is hereby
+Xgranted, provided that the above copyright notice appear in all copies
+Xand that both that copyright notice and this permission notice appear
+Xin supporting documentation, and that the name of Paradigm Associates
+XInc not be used in advertising or publicity pertaining to distribution
+Xof the software without specific, written prior permission.
+X
+XPARADIGM DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+XALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
+XPARADIGM BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
+XANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+XWHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+XARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+XSOFTWARE.
+
+
+X
+X*/
+X
+X/*
+X
+
+Xg...@paradigm.com, g...@mitech.com
+
+
+X
+XParadigm Associates Inc Phone: 617-492-6079
+X29 Putnam Ave, Suite 6
+XCambridge, MA 02138
+X
+X
+
+X Release 1.0: 24-APR-88
+X Release 1.1: 25-APR-88, added: macros, predicates, load. With additions by
+X Barak.Pe...@DOGHEN.BOLTZ.CS.CMU.EDU: Full flonum recognizer,
+X cleaned up uses of NULL/0. Now distributed with siod.scm.
+X Release 1.2: 28-APR-88, name changes as requested by J...@AI.AI.MIT.EDU,
+X plus some bug fixes.
+X Release 1.3: 1-MAY-88, changed env to use frames instead of alist.
+X define now works properly. vms specific function edit.
+X Release 1.4 20-NOV-89. Minor Cleanup and remodularization.
+X Now in 3 files, siod.h, slib.c, siod.c. Makes it easier to write your
+X own main loops. Some short-int changes for lightspeed C included.
+X Release 1.5 29-NOV-89. Added startup flag -g, select stop and copy
+X or mark-and-sweep garbage collection, which assumes that the stack/register
+X marking code is correct for your architecture.
+X Release 2.0 1-DEC-89. Added repl_hooks, Catch, Throw. This is significantly
+X different enough (from 1.3) now that I'm calling it a major release.
+X Release 2.1 4-DEC-89. Small reader features, dot, backquote, comma.
+X Release 2.2 5-DEC-89. gc,read,print,eval, hooks for user defined datatypes.
+X Release 2.3 6-DEC-89. save_forms, obarray intern mechanism. comment char.
+X Release 2.3a......... minor speed-ups. i/o interrupt considerations.
+X Release 2.4 27-APR-90 gen_readr, for read-from-string.
+X Release 2.5 18-SEP-90 arrays added to SIOD.C by popular demand. inums.
+X Release 2.6 11-MAR-92 function prototypes, some remodularization.
+X Release 2.7 20-MAR-92 hash tables, fasload. Stack check.
+X Release 2.8 3-APR-92 Bug fixes, \n syntax in string reading.
+X Release 2.9 28-AUG-92 gc sweep bug fix. fseek, ftell, etc. Change to
+X envlookup to allow (a . rest) suggested by bow...@is.s.u-tokyo.ac.jp.
+X Release 2.9a 10-AUG-93. Minor changes for Windows NT.
+X Release 3.0 1-MAY-94. Release it, include changes/cleanup recommended by
+X andr...@nynexst.com for the OS2 C++ compiler. Compilation and running
+X tested using DEC C, VAX C. WINDOWS NT. GNU C on SPARC. Storage
+X management improvements, more string functions. SQL support.
+
+
+X */
+X
+X#include <stdio.h>
+
+X#include <string.h>
+X#include <ctype.h>
+X#include <setjmp.h>
+X#include <signal.h>
+X#include <math.h>
+X#include <stdlib.h>
+X#include <time.h>
+X
+
+
+X#include "siod.h"
+X#include "siodp.h"
+X
+X
+
+Xchar *siod_version(void)
+X{return("3.0 1-MAY-94");}
+X
+Xlong nheaps = 2;
+XLISP *heaps;
+XLISP heap,heap_end,heap_org;
+Xlong heap_size = 5000;
+Xlong old_heap_used;
+Xlong gc_status_flag = 1;
+Xchar *init_file = (char *) NULL;
+Xchar *tkbuffer = NULL;
+Xlong gc_kind_copying = 0;
+Xlong gc_cells_allocated = 0;
+Xdouble gc_time_taken;
+XLISP *stack_start_ptr;
+XLISP freelist;
+Xjmp_buf errjmp;
+Xlong errjmp_ok = 0;
+Xlong nointerrupt = 1;
+Xlong interrupt_differed = 0;
+XLISP oblistvar = NIL;
+XLISP truth = NIL;
+XLISP eof_val = NIL;
+XLISP sym_errobj = NIL;
+XLISP sym_progn = NIL;
+XLISP sym_lambda = NIL;
+XLISP sym_quote = NIL;
+XLISP sym_dot = NIL;
+XLISP sym_after_gc = NIL;
+XLISP unbound_marker = NIL;
+XLISP *obarray;
+Xlong obarray_dim = 100;
+Xstruct catch_frame *catch_framep = (struct catch_frame *) NULL;
+Xvoid (*repl_puts)(char *) = NULL;
+XLISP (*repl_read)(void) = NULL;
+XLISP (*repl_eval)(LISP) = NULL;
+Xvoid (*repl_print)(LISP) = NULL;
+XLISP *inums;
+Xlong inums_dim = 256;
+Xstruct user_type_hooks *user_types = NULL;
+Xstruct gc_protected *protected_registers = NULL;
+Xjmp_buf save_regs_gc_mark;
+Xdouble gc_rt;
+Xlong gc_cells_collected;
+Xchar *user_ch_readm = "";
+Xchar *user_te_readm = "";
+XLISP (*user_readm)(int, struct gen_readio *) = NULL;
+XLISP (*user_readt)(char *,long, int *) = NULL;
+Xvoid (*fatal_exit_hook)(void) = NULL;
+X#ifdef THINK_C
+Xint ipoll_counter = 0;
+X#endif
+X
+Xchar *stack_limit_ptr = NULL;
+Xlong stack_size =
+X#ifdef THINK_C
+X 10000;
+X#else
+X 50000;
+X#endif
+
+
+X
+Xvoid process_cla(int argc,char **argv,int warnflag)
+
+X{int k;
+X char *ptr;
+X for(k=1;k<argc;++k)
+X {if (strlen(argv[k])<2) continue;
+X if (argv[k][0] != '-')
+X {if (warnflag) printf("bad arg: %s\n",argv[k]);continue;}
+X switch(argv[k][1])
+X {case 'h':
+X heap_size = atol(&(argv[k][2]));
+X if (ptr = strchr(&(argv[k][2]),':'))
+X nheaps = atol(&ptr[1]);
+X break;
+X case 'o':
+X obarray_dim = atol(&(argv[k][2]));
+X break;
+X case 'i':
+X init_file = &(argv[k][2]);
+X break;
+X case 'n':
+X inums_dim = atol(&(argv[k][2]));
+X break;
+X case 'g':
+X gc_kind_copying = atol(&(argv[k][2]));
+
+
+X break;
+X case 's':
+
+X stack_size = atol(&(argv[k][2]));
+X break;
+X default:
+X if (warnflag) printf("bad arg: %s\n",argv[k]);}}}
+X
+Xvoid print_welcome(void)
+X{printf("Welcome to SIOD, Scheme In One Defun, Version %s\n",
+X siod_version());
+X printf("(C) Copyright 1988-1994 Paradigm Associates Inc.\n");}
+X
+Xvoid print_hs_1(void)
+X{printf("%ld heaps. size = %ld cells, %ld bytes. %ld inums. GC is %s\n",
+X nheaps,
+X heap_size,heap_size*sizeof(struct obj),
+X inums_dim,
+X (gc_kind_copying == 1) ? "stop and copy" : "mark and sweep");}
+X
+Xvoid print_hs_2(void)
+
+
+X{if (gc_kind_copying == 1)
+
+X printf("heaps[0] at %p, heaps[1] at %p\n",heaps[0],heaps[1]);
+X else
+X printf("heaps[0] at %p\n",heaps[0]);}
+X
+Xlong no_interrupt(long n)
+X{long x;
+X x = nointerrupt;
+X nointerrupt = n;
+X if ((nointerrupt == 0) && (interrupt_differed == 1))
+X {interrupt_differed = 0;
+X err_ctrl_c();}
+X return(x);}
+
+
+X
+Xvoid handle_sigfpe(int sig SIG_restargs)
+
+X{signal(SIGFPE,handle_sigfpe);
+X err("floating point exception",NIL);}
+X
+Xvoid handle_sigint(int sig SIG_restargs)
+X{signal(SIGINT,handle_sigint);
+X if (nointerrupt == 1)
+X interrupt_differed = 1;
+X else
+X err_ctrl_c();}
+X
+Xvoid err_ctrl_c(void)
+X{err("control-c interrupt",NIL);}
+X
+XLISP get_eof_val(void)
+X{return(eof_val);}
+X
+Xlong repl_driver(long want_sigint,long want_init,struct repl_hooks *h)
+X{int k;
+X struct repl_hooks hd;
+X LISP stack_start;
+X stack_start_ptr = &stack_start;
+X stack_limit_ptr = STACK_LIMIT(stack_start_ptr,stack_size);
+X k = setjmp(errjmp);
+X if (k == 2) return(2);
+X if (want_sigint) signal(SIGINT,handle_sigint);
+X signal(SIGFPE,handle_sigfpe);
+X catch_framep = (struct catch_frame *) NULL;
+X errjmp_ok = 1;
+X interrupt_differed = 0;
+X nointerrupt = 0;
+X if (want_init && init_file && (k == 0)) vload(init_file,0);
+X if (!h)
+X {hd.repl_puts = repl_puts;
+X hd.repl_read = repl_read;
+X hd.repl_eval = repl_eval;
+X hd.repl_print = repl_print;
+X return(repl(&hd));}
+X else
+X return(repl(h));}
+X
+Xstatic void ignore_puts(char *st)
+X{}
+X
+Xstatic void noprompt_puts(char *st)
+X{if (strcmp(st,"> ") != 0)
+X put_st(st);}
+
+
+X
+Xstatic char *repl_c_string_arg = NULL;
+
+Xstatic long repl_c_string_flag = 0;
+X
+Xstatic LISP repl_c_string_read(void)
+
+
+X{LISP s;
+X if (repl_c_string_arg == NULL)
+X return(get_eof_val());
+X s = strcons(strlen(repl_c_string_arg),repl_c_string_arg);
+X repl_c_string_arg = NULL;
+X return(read_from_string(s));}
+X
+
+Xstatic void ignore_print(LISP x)
+X{repl_c_string_flag = 1;}
+X
+Xstatic void not_ignore_print(LISP x)
+X{repl_c_string_flag = 1;
+X lprint(x);}
+X
+Xlong repl_c_string(char *str,
+X long want_sigint,long want_init,long want_print)
+X{struct repl_hooks h;
+X long retval;
+X if (want_print)
+X h.repl_puts = noprompt_puts;
+X else
+X h.repl_puts = ignore_puts;
+X h.repl_read = repl_c_string_read;
+X h.repl_eval = NULL;
+X if (want_print)
+X h.repl_print = not_ignore_print;
+X else
+X h.repl_print = ignore_print;
+X repl_c_string_arg = str;
+X repl_c_string_flag = 0;
+X retval = repl_driver(want_sigint,want_init,&h);
+X if (retval != 0)
+X return(retval);
+X else if (repl_c_string_flag == 1)
+X return(0);
+X else
+X return(2);}
+X
+X#ifdef unix
+X#include <sys/types.h>
+X#include <sys/times.h>
+Xdouble myruntime(void)
+X{double total;
+X struct tms b;
+X times(&b);
+X total = b.tms_utime;
+X total += b.tms_stime;
+X return(total / 60.0);}
+X#else
+X#if defined(THINK_C) | defined(WIN32) | defined(VMS)
+X#ifndef CLOCKS_PER_SEC
+X#define CLOCKS_PER_SEC CLK_TCK
+X#endif
+Xdouble myruntime(void)
+X{return(((double) clock()) / ((double) CLOCKS_PER_SEC));}
+X#else
+Xdouble myruntime(void)
+X{time_t x;
+X time(&x);
+X return((double) x);}
+X#endif
+X#endif
+X
+
+
+Xvoid set_repl_hooks(void (*puts_f)(char *),
+X LISP (*read_f)(void),
+X LISP (*eval_f)(LISP),
+X void (*print_f)(LISP))
+
+X{repl_puts = puts_f;
+X repl_read = read_f;
+X repl_eval = eval_f;
+X repl_print = print_f;}
+X
+Xvoid fput_st(FILE *f,char *st)
+
+
+X{long flag;
+X flag = no_interrupt(1);
+
+X fprintf(f,"%s",st);
+X no_interrupt(flag);}
+X
+Xvoid put_st(char *st)
+X{fput_st(stdout,st);}
+X
+Xvoid grepl_puts(char *st,void (*repl_puts)(char *))
+X{if (repl_puts == NULL)
+X {put_st(st);
+X fflush(stdout);}
+X else
+X (*repl_puts)(st);}
+X
+Xlong repl(struct repl_hooks *h)
+X{LISP x,cw = 0;
+X double rt;
+X while(1)
+X {if ((gc_kind_copying == 1) && ((gc_status_flag) || heap >= heap_end))
+X {rt = myruntime();
+X gc_stop_and_copy();
+X sprintf(tkbuffer,
+X "GC took %g seconds, %ld compressed to %ld, %ld free\n",
+X myruntime()-rt,old_heap_used,heap-heap_org,heap_end-heap);
+X grepl_puts(tkbuffer,h->repl_puts);}
+X grepl_puts("> ",h->repl_puts);
+X if (h->repl_read == NULL)
+X x = lread();
+X else
+X x = (*h->repl_read)();
+X if EQ(x,eof_val) break;
+X rt = myruntime();
+
+
+X if (gc_kind_copying == 1)
+
+X cw = heap;
+X else
+X {gc_cells_allocated = 0;
+X gc_time_taken = 0.0;}
+X if (h->repl_eval == NULL)
+X x = leval(x,NIL);
+X else
+X x = (*h->repl_eval)(x);
+
+
+X if (gc_kind_copying == 1)
+
+X sprintf(tkbuffer,
+X "Evaluation took %g seconds %ld cons work\n",
+X myruntime()-rt,
+X heap-cw);
+X else
+X sprintf(tkbuffer,
+X "Evaluation took %g seconds (%g in gc) %ld cons work\n",
+X myruntime()-rt,
+X gc_time_taken,
+X gc_cells_allocated);
+X grepl_puts(tkbuffer,h->repl_puts);
+X if (h->repl_print == NULL)
+X lprint(x);
+X else
+X (*h->repl_print)(x);}
+X return(0);}
+X
+Xvoid set_fatal_exit_hook(void (*fcn)(void))
+X{fatal_exit_hook = fcn;}
+X
+Xstatic long inside_err = 0;
+X
+
+
+XLISP err(char *message, LISP x)
+
+X{struct catch_frame *l;
+X long was_inside = inside_err;
+X nointerrupt = 1;
+X if NNULLP(x)
+X printf("ERROR: %s (see errobj)\n",message);
+X else
+X printf("ERROR: %s\n",(message) ? message : "?");
+X if (errjmp_ok == 1)
+X {inside_err = 1;
+X setvar(sym_errobj,x,NIL);
+X for(l=catch_framep; l; l = (*l).next)
+X if EQ((*l).tag,sym_errobj)
+X {(*l).retval = (was_inside) ? NIL : cons(strcons(strlen(message),
+X message),
+X x);
+X nointerrupt = 0;
+X inside_err = 0;
+X longjmp((*l).cframe,2);}
+X inside_err = 0;
+X longjmp(errjmp,1);}
+X printf("FATAL ERROR DURING STARTUP OR CRITICAL CODE SECTION\n");
+X if (fatal_exit_hook)
+X (*fatal_exit_hook)();
+X else
+X exit(1);
+X return(NIL);}
+X
+XLISP errswitch(void)
+X{return(err("BUG. Reached impossible case",NIL));}
+X
+Xvoid err_stack(char *ptr)
+X /* The user could be given an option to continue here */
+X{err("the currently assigned stack limit has been exceded",NIL);}
+X
+XLISP stack_limit(LISP amount,LISP silent)
+X{if NNULLP(amount)
+X {stack_size = get_c_long(amount);
+X stack_limit_ptr = STACK_LIMIT(stack_start_ptr,stack_size);}
+X if NULLP(silent)
+X {sprintf(tkbuffer,"Stack_size = %ld bytes, [%p,%p]\n",
+X stack_size,stack_start_ptr,stack_limit_ptr);
+X put_st(tkbuffer);
+X return(NIL);}
+X else
+X return(flocons(stack_size));}
+X
+Xchar *get_c_string(LISP x)
+X{if TYPEP(x,tc_symbol)
+X return(PNAME(x));
+X else if TYPEP(x,tc_string)
+X return(x->storage_as.string.data);
+X else
+X err("not a symbol or string",x);
+X return(NULL);}
+X
+
+
+XLISP lerr(LISP message, LISP x)
+
+X{err(get_c_string(message),x);
+X return(NIL);}
+X
+Xvoid gc_fatal_error(void)
+X{err("ran out of storage",NIL);}
+X
+XLISP newcell(long type)
+X{LISP z;
+X NEWCELL(z,type);
+X return(z);}
+X
+XLISP cons(LISP x,LISP y)
+X{LISP z;
+X NEWCELL(z,tc_cons);
+X CAR(z) = x;
+X CDR(z) = y;
+X return(z);}
+X
+XLISP consp(LISP x)
+X{if CONSP(x) return(truth); else return(NIL);}
+X
+XLISP car(LISP x)
+X{switch TYPE(x)
+
+
+X {case tc_nil:
+X return(NIL);
+X case tc_cons:
+
+X return(CAR(x));
+X default:
+X return(err("wta to car",x));}}
+X
+XLISP cdr(LISP x)
+X{switch TYPE(x)
+
+
+X {case tc_nil:
+X return(NIL);
+X case tc_cons:
+
+X return(CDR(x));
+X default:
+X return(err("wta to cdr",x));}}
+X
+
+
+XLISP setcar(LISP cell, LISP value)
+
+X{if NCONSP(cell) err("wta to setcar",cell);
+X return(CAR(cell) = value);}
+X
+
+
+XLISP setcdr(LISP cell, LISP value)
+
+X{if NCONSP(cell) err("wta to setcdr",cell);
+X return(CDR(cell) = value);}
+X
+XLISP flocons(double x)
+X{LISP z;
+X long n;
+X if ((inums_dim > 0) &&
+X ((x - (n = (long)x)) == 0) &&
+X (x >= 0) &&
+X (n < inums_dim))
+X return(inums[n]);
+X NEWCELL(z,tc_flonum);
+X FLONM(z) = x;
+X return(z);}
+X
+XLISP numberp(LISP x)
+X{if FLONUMP(x) return(truth); else return(NIL);}
+X
+XLISP plus(LISP x,LISP y)
+X{if NFLONUMP(x) err("wta(1st) to plus",x);
+X if NFLONUMP(y) err("wta(2nd) to plus",y);
+X return(flocons(FLONM(x) + FLONM(y)));}
+X
+XLISP ltimes(LISP x,LISP y)
+X{if NFLONUMP(x) err("wta(1st) to times",x);
+X if NFLONUMP(y) err("wta(2nd) to times",y);
+X return(flocons(FLONM(x)*FLONM(y)));}
+X
+XLISP difference(LISP x,LISP y)
+X{if NFLONUMP(x) err("wta(1st) to difference",x);
+X if NFLONUMP(y) err("wta(2nd) to difference",y);
+X return(flocons(FLONM(x) - FLONM(y)));}
+X
+XLISP quotient(LISP x,LISP y)
+X{if NFLONUMP(x) err("wta(1st) to quotient",x);
+X if NFLONUMP(y) err("wta(2nd) to quotient",y);
+X return(flocons(FLONM(x)/FLONM(y)));}
+X
+XLISP greaterp(LISP x,LISP y)
+X{if NFLONUMP(x) err("wta(1st) to greaterp",x);
+X if NFLONUMP(y) err("wta(2nd) to greaterp",y);
+X if (FLONM(x)>FLONM(y)) return(truth);
+X return(NIL);}
+X
+XLISP lessp(LISP x,LISP y)
+X{if NFLONUMP(x) err("wta(1st) to lessp",x);
+X if NFLONUMP(y) err("wta(2nd) to lessp",y);
+X if (FLONM(x)<FLONM(y)) return(truth);
+X return(NIL);}
+X
+XLISP eq(LISP x,LISP y)
+X{if EQ(x,y) return(truth); else return(NIL);}
+X
+XLISP eql(LISP x,LISP y)
+X{if EQ(x,y) return(truth); else
+X if NFLONUMP(x) return(NIL); else
+X if NFLONUMP(y) return(NIL); else
+X if (FLONM(x) == FLONM(y)) return(truth);
+X return(NIL);}
+X
+XLISP symcons(char *pname,LISP vcell)
+X{LISP z;
+X NEWCELL(z,tc_symbol);
+X PNAME(z) = pname;
+X VCELL(z) = vcell;
+X return(z);}
+X
+XLISP symbolp(LISP x)
+X{if SYMBOLP(x) return(truth); else return(NIL);}
+X
+XLISP symbol_boundp(LISP x,LISP env)
+X{LISP tmp;
+X if NSYMBOLP(x) err("not a symbol",x);
+X tmp = envlookup(x,env);
+X if NNULLP(tmp) return(truth);
+X if EQ(VCELL(x),unbound_marker) return(NIL); else return(truth);}
+X
+XLISP symbol_value(LISP x,LISP env)
+X{LISP tmp;
+X if NSYMBOLP(x) err("not a symbol",x);
+X tmp = envlookup(x,env);
+X if NNULLP(tmp) return(CAR(tmp));
+X tmp = VCELL(x);
+X if EQ(tmp,unbound_marker) err("unbound variable",x);
+X return(tmp);}
+X
+Xchar *must_malloc(unsigned long size)
+X{char *tmp;
+X tmp = (char *) malloc(size);
+X if (tmp == (char *)NULL) err("failed to allocate storage from system",NIL);
+X return(tmp);}
+X
+XLISP gen_intern(char *name,long copyp)
+X{LISP l,sym,sl;
+X char *cname;
+X long hash=0,n,c,flag;
+X flag = no_interrupt(1);
+X if (obarray_dim > 1)
+X {hash = 0;
+X n = obarray_dim;
+X cname = name;
+X while((c = *cname++)) hash = ((hash * 17) ^ c) % n;
+X sl = obarray[hash];}
+X else
+X sl = oblistvar;
+X for(l=sl;NNULLP(l);l=CDR(l))
+X if (strcmp(name,PNAME(CAR(l))) == 0)
+X {no_interrupt(flag);
+X return(CAR(l));}
+X if (copyp == 1)
+X {cname = (char *) must_malloc(strlen(name)+1);
+X strcpy(cname,name);}
+X else
+X cname = name;
+X sym = symcons(cname,unbound_marker);
+X if (obarray_dim > 1) obarray[hash] = cons(sym,sl);
+X oblistvar = cons(sym,oblistvar);
+X no_interrupt(flag);
+X return(sym);}
+X
+XLISP cintern(char *name)
+X{return(gen_intern(name,0));}
+X
+XLISP rintern(char *name)
+X{return(gen_intern(name,1));}
+X
+XLISP intern(LISP name)
+X{return(rintern(get_c_string(name)));}
+X
+
+
+XLISP subrcons(long type, char *name, SUBR_FUNC f)
+
+X{LISP z;
+X NEWCELL(z,type);
+X (*z).storage_as.subr.name = name;
+X (*z).storage_as.subr0.f = f;
+X return(z);}
+X
+XLISP closure(LISP env,LISP code)
+X{LISP z;
+X NEWCELL(z,tc_closure);
+X (*z).storage_as.closure.env = env;
+X (*z).storage_as.closure.code = code;
+X return(z);}
+X
+Xvoid gc_protect(LISP *location)
+X{gc_protect_n(location,1);}
+X
+Xvoid gc_protect_n(LISP *location,long n)
+X{struct gc_protected *reg;
+X reg = (struct gc_protected *) must_malloc(sizeof(struct gc_protected));
+X (*reg).location = location;
+X (*reg).length = n;
+X (*reg).next = protected_registers;
+X protected_registers = reg;}
+X
+Xvoid gc_protect_sym(LISP *location,char *st)
+X{*location = cintern(st);
+X gc_protect(location);}
+X
+Xvoid scan_registers(void)
+X{struct gc_protected *reg;
+X LISP *location;
+X long j,n;
+X for(reg = protected_registers; reg; reg = (*reg).next)
+X {location = (*reg).location;
+X n = (*reg).length;
+
+
+X for(j=0;j<n;++j)
+
+X location[j] = gc_relocate(location[j]);}}
+X
+Xvoid init_storage(void)
+X{long j;
+X init_storage_1();
+X init_storage_a();
+X set_gc_hooks(tc_c_file,0,0,0,file_gc_free,&j);
+X set_print_hooks(tc_c_file,file_prin1);}
+X
+Xvoid init_storage_1(void)
+X{LISP ptr,next,end;
+X long j;
+X tkbuffer = (char *) must_malloc(TKBUFFERN+1);
+X if (((gc_kind_copying == 1) && (nheaps != 2)) || (nheaps < 1))
+X err("invalid number of heaps",NIL);
+X heaps = (LISP *) must_malloc(sizeof(LISP) * nheaps);
+X for(j=0;j<nheaps;++j) heaps[j] = NULL;
+X heaps[0] = (LISP) must_malloc(sizeof(struct obj)*heap_size);
+X heap = heaps[0];
+X heap_org = heap;
+X heap_end = heap + heap_size;
+
+
+X if (gc_kind_copying == 1)
+
+X heaps[1] = (LISP) must_malloc(sizeof(struct obj)*heap_size);
+X else
+X {ptr = heap_org;
+X end = heap_end;
+X while(1)
+X {(*ptr).type = tc_free_cell;
+X next = ptr + 1;
+X if (next < end)
+X {CDR(ptr) = next;
+X ptr = next;}
+X else
+X {CDR(ptr) = NIL;
+X break;}}
+X freelist = heap_org;}
+X gc_protect(&oblistvar);
+X if (obarray_dim > 1)
+X {obarray = (LISP *) must_malloc(sizeof(LISP) * obarray_dim);
+X for(j=0;j<obarray_dim;++j)
+X obarray[j] = NIL;
+X gc_protect_n(obarray,obarray_dim);}
+X unbound_marker = cons(cintern("**unbound-marker**"),NIL);
+X gc_protect(&unbound_marker);
+X eof_val = cons(cintern("eof"),NIL);
+X gc_protect(&eof_val);
+X gc_protect_sym(&truth,"t");
+X setvar(truth,truth,NIL);
+X setvar(cintern("nil"),NIL,NIL);
+X setvar(cintern("let"),cintern("let-internal-macro"),NIL);
+X gc_protect_sym(&sym_errobj,"errobj");
+X setvar(sym_errobj,NIL,NIL);
+X gc_protect_sym(&sym_progn,"begin");
+X gc_protect_sym(&sym_lambda,"lambda");
+X gc_protect_sym(&sym_quote,"quote");
+X gc_protect_sym(&sym_dot,".");
+X gc_protect_sym(&sym_after_gc,"*after-gc*");
+X setvar(sym_after_gc,NIL,NIL);
+X if (inums_dim > 0)
+X {inums = (LISP *) must_malloc(sizeof(LISP) * inums_dim);
+X for(j=0;j<inums_dim;++j)
+X {NEWCELL(ptr,tc_flonum);
+X FLONM(ptr) = j;
+X inums[j] = ptr;}
+X gc_protect_n(inums,inums_dim);}}
+
+
+X
+Xvoid init_subr(char *name, long type, SUBR_FUNC fcn)
+
+X{setvar(cintern(name),subrcons(type,name,fcn),NIL);}
+X
+
+
+Xvoid init_subr_0(char *name, LISP (*fcn)(void))
+
+X{init_subr(name,tc_subr_0,(SUBR_FUNC)fcn);}
+X
+
+
+Xvoid init_subr_1(char *name, LISP (*fcn)(LISP))
+
+X{init_subr(name,tc_subr_1,(SUBR_FUNC)fcn);}
+X
+
+
+Xvoid init_subr_2(char *name, LISP (*fcn)(LISP,LISP))
+
+X{init_subr(name,tc_subr_2,(SUBR_FUNC)fcn);}
+X
+
+
+Xvoid init_subr_3(char *name, LISP (*fcn)(LISP,LISP,LISP))
+
+X{init_subr(name,tc_subr_3,(SUBR_FUNC)fcn);}
+X
+
+
+Xvoid init_lsubr(char *name, LISP (*fcn)(LISP))
+
+X{init_subr(name,tc_lsubr,(SUBR_FUNC)fcn);}
+X
+
+
+Xvoid init_fsubr(char *name, LISP (*fcn)(LISP,LISP))
+
+X{init_subr(name,tc_fsubr,(SUBR_FUNC)fcn);}
+X
+
+
+Xvoid init_msubr(char *name, LISP (*fcn)(LISP *,LISP *))
+
+X{init_subr(name,tc_msubr,(SUBR_FUNC)fcn);}
+
+
+X
+XLISP assq(LISP x,LISP alist)
+
+X{LISP l,tmp;
+X for(l=alist;CONSP(l);l=CDR(l))
+X {tmp = CAR(l);
+
+X if (CONSP(tmp) && EQ(CAR(tmp),x)) return(tmp);
+
+
+X INTERRUPT_CHECK();}
+X if EQ(l,NIL) return(NIL);
+
+X return(err("improper list to assq",alist));}
+X
+Xstruct user_type_hooks *get_user_type_hooks(long type)
+X{long n;
+X if (user_types == NULL)
+X {n = sizeof(struct user_type_hooks) * tc_table_dim;
+X user_types = (struct user_type_hooks *) must_malloc(n);
+X memset(user_types,0,n);}
+X if ((type >= 0) && (type < tc_table_dim))
+X return(&user_types[type]);
+X else
+X err("type number out of range",NIL);
+X return(NULL);}
+X
+
+Xvoid set_gc_hooks(long type,
+X LISP (*rel)(LISP),
+X LISP (*mark)(LISP),
+X void (*scan)(LISP),
+X void (*free)(LISP),
+X long *kind)
+
+X{struct user_type_hooks *p;
+X p = get_user_type_hooks(type);
+X p->gc_relocate = rel;
+X p->gc_scan = scan;
+X p->gc_mark = mark;
+X p->gc_free = free;
+X *kind = gc_kind_copying;}
+X
+XLISP gc_relocate(LISP x)
+X{LISP nw;
+X struct user_type_hooks *p;
+X if EQ(x,NIL) return(NIL);
+X if ((*x).gc_mark == 1) return(CAR(x));
+X switch TYPE(x)
+X {case tc_flonum:
+X case tc_cons:
+X case tc_symbol:
+X case tc_closure:
+
+
+X case tc_subr_0:
+X case tc_subr_1:
+X case tc_subr_2:
+X case tc_subr_3:
+X case tc_lsubr:
+X case tc_fsubr:
+X case tc_msubr:
+
+X if ((nw = heap) >= heap_end) gc_fatal_error();
+X heap = nw+1;
+
+X memcpy(nw,x,sizeof(struct obj));
+X break;
+X default:
+X p = get_user_type_hooks(TYPE(x));
+X if (p->gc_relocate)
+X nw = (*p->gc_relocate)(x);
+X else
+
+
+X {if ((nw = heap) >= heap_end) gc_fatal_error();
+X heap = nw+1;
+
+X memcpy(nw,x,sizeof(struct obj));}}
+X (*x).gc_mark = 1;
+X CAR(x) = nw;
+X return(nw);}
+X
+XLISP get_newspace(void)
+X{LISP newspace;
+X if (heap_org == heaps[0])
+X newspace = heaps[1];
+X else
+X newspace = heaps[0];
+X heap = newspace;
+X heap_org = heap;
+X heap_end = heap + heap_size;
+X return(newspace);}
+X
+Xvoid scan_newspace(LISP newspace)
+X{LISP ptr;
+X struct user_type_hooks *p;
+X for(ptr=newspace; ptr < heap; ++ptr)
+X {switch TYPE(ptr)
+X {case tc_cons:
+X case tc_closure:
+
+
+X CAR(ptr) = gc_relocate(CAR(ptr));
+X CDR(ptr) = gc_relocate(CDR(ptr));
+
+X break;
+X case tc_symbol:
+
+X VCELL(ptr) = gc_relocate(VCELL(ptr));
+X break;
+X case tc_flonum:
+
+
+X case tc_subr_0:
+X case tc_subr_1:
+X case tc_subr_2:
+X case tc_subr_3:
+X case tc_lsubr:
+X case tc_fsubr:
+X case tc_msubr:
+
+X break;
+X default:
+X p = get_user_type_hooks(TYPE(ptr));
+X if (p->gc_scan) (*p->gc_scan)(ptr);}}}
+X
+Xvoid free_oldspace(LISP space,LISP end)
+X{LISP ptr;
+X struct user_type_hooks *p;
+X for(ptr=space; ptr < end; ++ptr)
+X if (ptr->gc_mark == 0)
+X switch TYPE(ptr)
+X {case tc_cons:
+X case tc_closure:
+X case tc_symbol:
+X case tc_flonum:
+
+
+X case tc_subr_0:
+X case tc_subr_1:
+X case tc_subr_2:
+X case tc_subr_3:
+X case tc_lsubr:
+X case tc_fsubr:
+X case tc_msubr:
+
+X break;
+X default:
+X p = get_user_type_hooks(TYPE(ptr));
+X if (p->gc_free) (*p->gc_free)(ptr);}}
+X
+Xvoid gc_stop_and_copy(void)
+X{LISP newspace,oldspace,end;
+
+
+X long flag;
+X flag = no_interrupt(1);
+
+X errjmp_ok = 0;
+X oldspace = heap_org;
+X end = heap;
+X old_heap_used = end - oldspace;
+X newspace = get_newspace();
+X scan_registers();
+X scan_newspace(newspace);
+X free_oldspace(oldspace,end);
+X errjmp_ok = 1;
+X no_interrupt(flag);}
+X
+XLISP allocate_aheap(void)
+X{long j,flag;
+X LISP ptr,end,next;
+X gc_kind_check();
+X for(j=0;j<nheaps;++j)
+X if (!heaps[j])
+X {flag = no_interrupt(1);
+X if (gc_status_flag)
+X printf("[allocating heap %ld]\n",j);
+X heaps[j] = (LISP) must_malloc(sizeof(struct obj)*heap_size);
+X ptr = heaps[j];
+X end = heaps[j] + heap_size;
+X while(1)
+X {(*ptr).type = tc_free_cell;
+X next = ptr + 1;
+X if (next < end)
+X {CDR(ptr) = next;
+X ptr = next;}
+X else
+X {CDR(ptr) = freelist;
+X break;}}
+X freelist = heaps[j];
+X flag = no_interrupt(flag);
+X return(truth);}
+X return(NIL);}
+X
+Xvoid gc_for_newcell(void)
+X{long flag,n;
+X LISP l;
+X if (errjmp_ok == 0) gc_fatal_error();
+X flag = no_interrupt(1);
+X errjmp_ok = 0;
+X gc_mark_and_sweep();
+X errjmp_ok = 1;
+X no_interrupt(flag);
+X for(n=0,l=freelist;(n < 100) && NNULLP(l); ++n) l = CDR(l);
+X if (n == 0)
+X {if NULLP(allocate_aheap())
+X gc_fatal_error();}
+X else if (n == 100)
+X leval(leval(sym_after_gc,NIL),NIL);
+X else
+X allocate_aheap();}
+X
+Xvoid gc_mark_and_sweep(void)
+X{LISP stack_end;
+X gc_ms_stats_start();
+X setjmp(save_regs_gc_mark);
+X mark_locations((LISP *) save_regs_gc_mark,
+X (LISP *) (((char *) save_regs_gc_mark) + sizeof(save_regs_gc_mark)));
+X mark_protected_registers();
+X mark_locations((LISP *) stack_start_ptr,
+X (LISP *) &stack_end);
+X#ifdef THINK_C
+X mark_locations((LISP *) ((char *) stack_start_ptr + 2),
+X (LISP *) ((char *) &stack_end + 2));
+X#endif
+X gc_sweep();
+X gc_ms_stats_end();}
+X
+Xvoid gc_ms_stats_start(void)
+X{gc_rt = myruntime();
+X gc_cells_collected = 0;
+X if (gc_status_flag)
+X printf("[starting GC]\n");}
+X
+Xvoid gc_ms_stats_end(void)
+X{gc_rt = myruntime() - gc_rt;
+X gc_time_taken = gc_time_taken + gc_rt;
+X if (gc_status_flag)
+X printf("[GC took %g cpu seconds, %ld cells collected]\n",
+X gc_rt,
+X gc_cells_collected);}
+X
+Xvoid gc_mark(LISP ptr)
+X{struct user_type_hooks *p;
+X gc_mark_loop:
+X if NULLP(ptr) return;
+X if ((*ptr).gc_mark) return;
+X (*ptr).gc_mark = 1;
+X switch ((*ptr).type)
+X {case tc_flonum:
+X break;
+X case tc_cons:
+X gc_mark(CAR(ptr));
+X ptr = CDR(ptr);
+X goto gc_mark_loop;
+X case tc_symbol:
+X ptr = VCELL(ptr);
+X goto gc_mark_loop;
+X case tc_closure:
+X gc_mark((*ptr).storage_as.closure.code);
+X ptr = (*ptr).storage_as.closure.env;
+X goto gc_mark_loop;
+
+
+X case tc_subr_0:
+X case tc_subr_1:
+X case tc_subr_2:
+X case tc_subr_3:
+X case tc_lsubr:
+X case tc_fsubr:
+X case tc_msubr:
+
+X break;
+X default:
+X p = get_user_type_hooks(TYPE(ptr));
+X if (p->gc_mark)
+X ptr = (*p->gc_mark)(ptr);}}
+X
+Xvoid mark_protected_registers(void)
+X{struct gc_protected *reg;
+X LISP *location;
+X long j,n;
+X for(reg = protected_registers; reg; reg = (*reg).next)
+X {location = (*reg).location;
+X n = (*reg).length;
+
+
+X for(j=0;j<n;++j)
+
+X gc_mark(location[j]);}}
+X
+Xvoid mark_locations(LISP *start,LISP *end)
+X{LISP *tmp;
+X long n;
+X if (start > end)
+X {tmp = start;
+X start = end;
+X end = tmp;}
+X n = end - start;
+X mark_locations_array(start,n);}
+X
+Xlong looks_pointerp(LISP p)
+X{long j;
+X LISP h;
+X for(j=0;j<nheaps;++j)
+X if ((h = heaps[j]) &&
+X (p >= h) &&
+X (p < (h + heap_size)) &&
+X (((((char *)p) - ((char *)h)) % sizeof(struct obj)) == 0) &&
+X NTYPEP(p,tc_free_cell))
+X return(1);
+X return(0);}
+X
+Xvoid mark_locations_array(LISP *x,long n)
+X{int j;
+X LISP p;
+
+
+X for(j=0;j<n;++j)
+
+X {p = x[j];
+X if (looks_pointerp(p))
+X gc_mark(p);}}
+X
+Xvoid gc_sweep(void)
+X{LISP ptr,end,nfreelist,org;
+X long n,k;
+X struct user_type_hooks *p;
+X end = heap_end;
+X n = 0;
+X nfreelist = NIL;
+X for(k=0;k<nheaps;++k)
+X if (heaps[k])
+X {org = heaps[k];
+X end = org + heap_size;
+X for(ptr=org; ptr < end; ++ptr)
+X if (((*ptr).gc_mark == 0))
+X {switch((*ptr).type)
+X {case tc_free_cell:
+X case tc_cons:
+X case tc_closure:
+X case tc_symbol:
+X case tc_flonum:
+
+
+X case tc_subr_0:
+X case tc_subr_1:
+X case tc_subr_2:
+X case tc_subr_3:
+X case tc_lsubr:
+X case tc_fsubr:
+X case tc_msubr:
+
+X break;
+X default:
+X p = get_user_type_hooks(TYPE(ptr));
+X if (p->gc_free)
+X (*p->gc_free)(ptr);}
+X ++n;
+X (*ptr).type = tc_free_cell;
+X CDR(ptr) = nfreelist;
+X nfreelist = ptr;}
+X else
+X (*ptr).gc_mark = 0;}
+X gc_cells_collected = n;
+X freelist = nfreelist;}
+X
+Xvoid gc_kind_check(void)
+
+
+X{if (gc_kind_copying == 1)
+
+X err("cannot perform operation with stop-and-copy GC mode. Use -g0\n",
+X NIL);}
+X
+XLISP user_gc(LISP args)
+X{long old_status_flag,flag;
+X gc_kind_check();
+X flag = no_interrupt(1);
+X errjmp_ok = 0;
+X old_status_flag = gc_status_flag;
+X if NNULLP(args)
+X if NULLP(car(args)) gc_status_flag = 0; else gc_status_flag = 1;
+X gc_mark_and_sweep();
+X gc_status_flag = old_status_flag;
+X errjmp_ok = 1;
+
+
+X no_interrupt(flag);
+X return(NIL);}
+X
+
+Xlong nactive_heaps(void)
+X{long m;
+X for(m=0;(m < nheaps) && heaps[m];++m);
+X return(m);}
+X
+Xlong freelist_length(void)
+
+
+X{long n;
+X LISP l;
+
+X for(n=0,l=freelist;NNULLP(l); ++n) l = CDR(l);
+X return(n);}
+X
+XLISP gc_status(LISP args)
+X{long n,m;
+X if NNULLP(args)
+X if NULLP(car(args)) gc_status_flag = 0; else gc_status_flag = 1;
+
+
+X if (gc_kind_copying == 1)
+
+X {if (gc_status_flag)
+X put_st("garbage collection is on\n");
+X else
+X put_st("garbage collection is off\n");
+X sprintf(tkbuffer,"%ld allocated %ld free\n",
+X heap - heap_org, heap_end - heap);
+X put_st(tkbuffer);}
+X else
+X {if (gc_status_flag)
+X put_st("garbage collection verbose\n");
+X else
+X put_st("garbage collection silent\n");
+X {m = nactive_heaps();
+X n = freelist_length();
+X sprintf(tkbuffer,"%ld/%ld heaps, %ld allocated %ld free\n",
+X m,nheaps,m*heap_size - n,n);
+X put_st(tkbuffer);}}
+X return(NIL);}
+X
+XLISP gc_info(LISP arg)
+X{switch(get_c_long(arg))
+X {case 0:
+X return((gc_kind_copying == 1) ? truth : NIL);
+X case 1:
+X return(flocons(nactive_heaps()));
+X case 2:
+X return(flocons(nheaps));
+X case 3:
+X return(flocons(heap_size));
+X case 4:
+X return(flocons((gc_kind_copying == 1)
+X ? (long) (heap_end - heap)
+X : freelist_length()));
+X default:
+X return(NIL);}}
+X
+XLISP leval_args(LISP l,LISP env)
+X{LISP result,v1,v2,tmp;
+X if NULLP(l) return(NIL);
+X if NCONSP(l) err("bad syntax argument list",l);
+X result = cons(leval(CAR(l),env),NIL);
+X for(v1=result,v2=CDR(l);
+X CONSP(v2);
+X v1 = tmp, v2 = CDR(v2))
+X {tmp = cons(leval(CAR(v2),env),NIL);
+X CDR(v1) = tmp;}
+X if NNULLP(v2) err("bad syntax argument list",l);
+X return(result);}
+X
+
+
+XLISP extend_env(LISP actuals,LISP formals,LISP env)
+
+X{if SYMBOLP(formals)
+X return(cons(cons(cons(formals,NIL),cons(actuals,NIL)),env));
+X return(cons(cons(formals,actuals),env));}
+X
+X#define ENVLOOKUP_TRICK 1
+X
+XLISP envlookup(LISP var,LISP env)
+X{LISP frame,al,fl,tmp;
+X for(frame=env;CONSP(frame);frame=CDR(frame))
+X {tmp = CAR(frame);
+X if NCONSP(tmp) err("damaged frame",tmp);
+X for(fl=CAR(tmp),al=CDR(tmp);CONSP(fl);fl=CDR(fl),al=CDR(al))
+X {if NCONSP(al) err("too few arguments",tmp);
+X if EQ(CAR(fl),var) return(al);}
+X /* suggested by a user. It works for reference (although conses)
+X but doesn't allow for set! to work properly... */
+X#if (ENVLOOKUP_TRICK)
+X if (SYMBOLP(fl) && EQ(fl, var)) return(cons(al, NIL));
+X#endif
+X }
+X if NNULLP(frame) err("damaged env",env);
+X return(NIL);}
+X
+
+
+Xvoid set_eval_hooks(long type,LISP (*fcn)(LISP, LISP *,LISP *))
+
+X{struct user_type_hooks *p;
+X p = get_user_type_hooks(type);
+X p->leval = fcn;}
+X
+XLISP leval(LISP x,LISP env)
+X{LISP tmp,arg1;
+X struct user_type_hooks *p;
+X STACK_CHECK(&x);
+X loop:
+X INTERRUPT_CHECK();
+X switch TYPE(x)
+X {case tc_symbol:
+X tmp = envlookup(x,env);
+X if NNULLP(tmp) return(CAR(tmp));
+X tmp = VCELL(x);
+X if EQ(tmp,unbound_marker) err("unbound variable",x);
+X return(tmp);
+X case tc_cons:
+X tmp = CAR(x);
+X switch TYPE(tmp)
+X {case tc_symbol:
+X tmp = envlookup(tmp,env);
+X if NNULLP(tmp)
+X {tmp = CAR(tmp);
+X break;}
+X tmp = VCELL(CAR(x));
+X if EQ(tmp,unbound_marker) err("unbound variable",CAR(x));
+X break;
+X case tc_cons:
+X tmp = leval(tmp,env);
+X break;}
+X switch TYPE(tmp)
+X {case tc_subr_0:
+X return(SUBR0(tmp)());
+X case tc_subr_1:
+X return(SUBR1(tmp)(leval(car(CDR(x)),env)));
+X case tc_subr_2:
+X x = CDR(x);
+X arg1 = leval(car(x),env);
+X x = NULLP(x) ? NIL : CDR(x);
+X return(SUBR2(tmp)(arg1,
+X leval(car(x),env)));
+X case tc_subr_3:
+X x = CDR(x);
+X arg1 = leval(car(x),env);
+X x = NULLP(x) ? NIL : CDR(x);
+X return(SUBR3(tmp)(arg1,
+X leval(car(x),env),
+X leval(car(cdr(x)),env)));
+X case tc_lsubr:
+X return(SUBR1(tmp)(leval_args(CDR(x),env)));
+X case tc_fsubr:
+X return(SUBR2(tmp)(CDR(x),env));
+X case tc_msubr:
+X if NULLP(SUBRM(tmp)(&x,&env)) return(x);
+X goto loop;
+X case tc_closure:
+X env = extend_env(leval_args(CDR(x),env),
+X car((*tmp).storage_as.closure.code),
+X (*tmp).storage_as.closure.env);
+X x = cdr((*tmp).storage_as.closure.code);
+X goto loop;
+X case tc_symbol:
+X x = cons(tmp,cons(cons(sym_quote,cons(x,NIL)),NIL));
+X x = leval(x,NIL);
+X goto loop;
+X default:
+X p = get_user_type_hooks(TYPE(tmp));
+X if (p->leval)
+X {if NULLP((*p->leval)(tmp,&x,&env)) return(x); else goto loop;}
+X err("bad function",tmp);}
+X default:
+X return(x);}}
+X
+
+
+XLISP setvar(LISP var,LISP val,LISP env)
+
+X{LISP tmp;
+X if NSYMBOLP(var) err("wta(non-symbol) to setvar",var);
+X tmp = envlookup(var,env);
+X if NULLP(tmp) return(VCELL(var) = val);
+X return(CAR(tmp)=val);}
+X
+XLISP leval_setq(LISP args,LISP env)
+X{return(setvar(car(args),leval(car(cdr(args)),env),env));}
+X
+XLISP syntax_define(LISP args)
+X{if SYMBOLP(car(args)) return(args);
+X return(syntax_define(
+X cons(car(car(args)),
+X cons(cons(sym_lambda,
+X cons(cdr(car(args)),
+X cdr(args))),
+X NIL))));}
+X
+XLISP leval_define(LISP args,LISP env)
+X{LISP tmp,var,val;
+X tmp = syntax_define(args);
+X var = car(tmp);
+X if NSYMBOLP(var) err("wta(non-symbol) to define",var);
+X val = leval(car(cdr(tmp)),env);
+X tmp = envlookup(var,env);
+X if NNULLP(tmp) return(CAR(tmp) = val);
+X if NULLP(env) return(VCELL(var) = val);
+X tmp = car(env);
+X setcar(tmp,cons(var,car(tmp)));
+X setcdr(tmp,cons(val,cdr(tmp)));
+X return(val);}
+X
+XLISP leval_if(LISP *pform,LISP *penv)
+X{LISP args,env;
+X args = cdr(*pform);
+X env = *penv;
+X if NNULLP(leval(car(args),env))
+X *pform = car(cdr(args)); else *pform = car(cdr(cdr(args)));
+X return(truth);}
+X
+XLISP leval_lambda(LISP args,LISP env)
+X{LISP body;
+X if NULLP(cdr(cdr(args)))
+X body = car(cdr(args));
+X else body = cons(sym_progn,cdr(args));
+X return(closure(env,cons(arglchk(car(args)),body)));}
+X
+XLISP leval_progn(LISP *pform,LISP *penv)
+X{LISP env,l,next;
+X env = *penv;
+X l = cdr(*pform);
+X next = cdr(l);
+X while(NNULLP(next)) {leval(car(l),env);l=next;next=cdr(next);}
+X *pform = car(l);
+X return(truth);}
+X
+XLISP leval_or(LISP *pform,LISP *penv)
+X{LISP env,l,next,val;
+X env = *penv;
+X l = cdr(*pform);
+X next = cdr(l);
+X while(NNULLP(next))
+X {val = leval(car(l),env);
+X if NNULLP(val) {*pform = val; return(NIL);}
+X l=next;next=cdr(next);}
+X *pform = car(l);
+X return(truth);}
+X
+XLISP leval_and(LISP *pform,LISP *penv)
+X{LISP env,l,next;
+X env = *penv;
+X l = cdr(*pform);
+X if NULLP(l) {*pform = truth; return(NIL);}
+X next = cdr(l);
+X while(NNULLP(next))
+X {if NULLP(leval(car(l),env)) {*pform = NIL; return(NIL);}
+X l=next;next=cdr(next);}
+X *pform = car(l);
+X return(truth);}
+X
+XLISP leval_catch_1(LISP forms,LISP env)
+X{LISP l,val = NIL;
+X for(l=forms; NNULLP(l); l = cdr(l))
+X val = leval(car(l),env);
+X catch_framep = catch_framep->next;
+X return(val);}
+X
+XLISP leval_catch(LISP args,LISP env)
+X{struct catch_frame frame;
+X int k;
+X frame.tag = leval(car(args),env);
+X frame.next = catch_framep;
+X k = setjmp(frame.cframe);
+X catch_framep = &frame;
+X if (k == 2)
+X {catch_framep = frame.next;
+X return(frame.retval);}
+X return(leval_catch_1(cdr(args),env));}
+X
+XLISP lthrow(LISP tag,LISP value)
+X{struct catch_frame *l;
+X for(l=catch_framep; l; l = (*l).next)
+X if EQ((*l).tag,tag)
+X {(*l).retval = value;
+X longjmp((*l).cframe,2);}
+X err("no *catch found with this tag",tag);
+X return(NIL);}
+X
+XLISP leval_let(LISP *pform,LISP *penv)
+X{LISP env,l;
+X l = cdr(*pform);
+X env = *penv;
+X *penv = extend_env(leval_args(car(cdr(l)),env),car(l),env);
+X *pform = car(cdr(cdr(l)));
+X return(truth);}
+X
+XLISP reverse(LISP l)
+X{LISP n,p;
+X n = NIL;
+X for(p=l;NNULLP(p);p=cdr(p)) n = cons(car(p),n);
+X return(n);}
+X
+XLISP let_macro(LISP form)
+X{LISP p,fl,al,tmp;
+X fl = NIL;
+X al = NIL;
+X for(p=car(cdr(form));NNULLP(p);p=cdr(p))
+X {tmp = car(p);
+X if SYMBOLP(tmp) {fl = cons(tmp,fl); al = cons(NIL,al);}
+X else {fl = cons(car(tmp),fl); al = cons(car(cdr(tmp)),al);}}
+X p = cdr(cdr(form));
+X if NULLP(cdr(p)) p = car(p); else p = cons(sym_progn,p);
+X setcdr(form,cons(reverse(fl),cons(reverse(al),cons(p,NIL))));
+X setcar(form,cintern("let-internal"));
+X return(form);}
+X
+XLISP leval_quote(LISP args,LISP env)
+X{return(car(args));}
+X
+XLISP leval_tenv(LISP args,LISP env)
+X{return(env);}
+
+
+X
+XLISP leval_while(LISP args,LISP env)
+
+X{LISP l;
+X while NNULLP(leval(car(args),env))
+X for(l=cdr(args);NNULLP(l);l=cdr(l))
+X leval(car(l),env);
+X return(NIL);}
+X
+XLISP symbolconc(LISP args)
+
+
+X{long size;
+X LISP l,s;
+
+X size = 0;
+X tkbuffer[0] = 0;
+X for(l=args;NNULLP(l);l=cdr(l))
+X {s = car(l);
+X if NSYMBOLP(s) err("wta(non-symbol) to symbolconc",s);
+X size = size + strlen(PNAME(s));
+X if (size > TKBUFFERN) err("symbolconc buffer overflow",NIL);
+X strcat(tkbuffer,PNAME(s));}
+X return(rintern(tkbuffer));}
+X
+
+
+Xvoid set_print_hooks(long type,void (*fcn)(LISP, FILE *))
+
+X{struct user_type_hooks *p;
+X p = get_user_type_hooks(type);
+X p->prin1 = fcn;}
+X
+XLISP lprin1f(LISP exp,FILE *f)
+
+
+X{LISP tmp;
+X struct user_type_hooks *p;
+
+X STACK_CHECK(&exp);
+X INTERRUPT_CHECK();
+X switch TYPE(exp)
+X {case tc_nil:
+X fput_st(f,"()");
+X break;
+X case tc_cons:
+X fput_st(f,"(");
+X lprin1f(car(exp),f);
+X for(tmp=cdr(exp);CONSP(tmp);tmp=cdr(tmp))
+X {fput_st(f," ");lprin1f(car(tmp),f);}
+X if NNULLP(tmp) {fput_st(f," . ");lprin1f(tmp,f);}
+
+
+X fput_st(f,")");
+X break;
+
+X case tc_flonum:
+X sprintf(tkbuffer,"%g",FLONM(exp));
+X fput_st(f,tkbuffer);
+
+
+X break;
+X case tc_symbol:
+
+X fput_st(f,PNAME(exp));
+X break;
+
+
+X case tc_subr_0:
+X case tc_subr_1:
+X case tc_subr_2:
+X case tc_subr_3:
+X case tc_lsubr:
+X case tc_fsubr:
+X case tc_msubr:
+
+X sprintf(tkbuffer,"#<SUBR(%d) ",TYPE(exp));
+X fput_st(f,tkbuffer);
+X fput_st(f,(*exp).storage_as.subr.name);
+
+
+X fput_st(f,">");
+X break;
+
+X case tc_closure:
+X fput_st(f,"#<CLOSURE ");
+X lprin1f(car((*exp).storage_as.closure.code),f);
+X fput_st(f," ");
+X lprin1f(cdr((*exp).storage_as.closure.code),f);
+X fput_st(f,">");
+X break;
+X default:
+X p = get_user_type_hooks(TYPE(exp));
+X if (p->prin1)
+X (*p->prin1)(exp,f);
+X else
+X {sprintf(tkbuffer,"#<UNKNOWN %d %p>",TYPE(exp),exp);
+X fput_st(f,tkbuffer);}}
+X return(NIL);}
+X
+XLISP lprint(LISP exp)
+X{lprin1f(exp,stdout);
+
+
+X put_st("\n");
+X return(NIL);}
+X
+
+XLISP lread(void)
+X{return(lreadf(stdin));}
+X
+Xint f_getc(FILE *f)
+X{long iflag,dflag;
+X int c;
+X iflag = no_interrupt(1);
+X dflag = interrupt_differed;
+X c = getc(f);
+X#ifdef VMS
+X if ((dflag == 0) & interrupt_differed & (f == stdin))
+X while((c != 0) & (c != EOF)) c = getc(f);
+X#endif
+X no_interrupt(iflag);
+X return(c);}
+X
+
+
+Xvoid f_ungetc(int c, FILE *f)
+
+X{ungetc(c,f);}
+X
+
+
+Xint flush_ws(struct gen_readio *f,char *eoferr)
+
+X{int c,commentp;
+X commentp = 0;
+
+
+X while(1)
+X {c = GETC_FCN(f);
+
+X if (c == EOF) if (eoferr) err(eoferr,NIL); else return(c);
+X if (commentp) {if (c == '\n') commentp = 0;}
+X else if (c == ';') commentp = 1;
+X else if (!isspace(c)) return(c);}}
+X
+XLISP lreadf(FILE *f)
+X{struct gen_readio s;
+X s.getc_fcn = (int (*)(char *))f_getc;
+X s.ungetc_fcn = (void (*)(int, char *))f_ungetc;
+X s.cb_argument = (char *) f;
+X return(readtl(&s));}
+X
+XLISP readtl(struct gen_readio *f)
+X{int c;
+X c = flush_ws(f,(char *)NULL);
+X if (c == EOF) return(eof_val);
+X UNGETC_FCN(c,f);
+X return(lreadr(f));}
+X
+
+
+Xvoid set_read_hooks(char *all_set,char *end_set,
+X LISP (*fcn1)(int, struct gen_readio *),
+X LISP (*fcn2)(char *,long, int *))
+
+X{user_ch_readm = all_set;
+X user_te_readm = end_set;
+X user_readm = fcn1;
+X user_readt = fcn2;}
+X
+XLISP lreadr(struct gen_readio *f)
+X{int c,j;
+X char *p;
+X STACK_CHECK(&f);
+X p = tkbuffer;
+X c = flush_ws(f,"end of file inside read");
+X switch (c)
+X {case '(':
+X return(lreadparen(f));
+X case ')':
+X err("unexpected close paren",NIL);
+X case '\'':
+X return(cons(sym_quote,cons(lreadr(f),NIL)));
+X case '`':
+X return(cons(cintern("+internal-backquote"),lreadr(f)));
+X case ',':
+X c = GETC_FCN(f);
+X switch(c)
+X {case '@':
+X p = "+internal-comma-atsign";
+X break;
+X case '.':
+X p = "+internal-comma-dot";
+X break;
+X default:
+X p = "+internal-comma";
+X UNGETC_FCN(c,f);}
+X return(cons(cintern(p),lreadr(f)));
+X case '"':
+X return(lreadstring(f));
+X default:
+X if ((user_readm != NULL) && strchr(user_ch_readm,c))
+X return((*user_readm)(c,f));}
+X *p++ = c;
+X for(j = 1; j<TKBUFFERN; ++j)
+X {c = GETC_FCN(f);
+X if (c == EOF) return(lreadtk(j));
+X if (isspace(c)) return(lreadtk(j));
+X if (strchr("()'`,;\"",c) || strchr(user_te_readm,c))
+X {UNGETC_FCN(c,f);return(lreadtk(j));}
+X *p++ = c;}
+X return(err("token larger than TKBUFFERN",NIL));}
+X
+XLISP lreadparen(struct gen_readio *f)
+X{int c;
+X LISP tmp;
+X c = flush_ws(f,"end of file inside list");
+X if (c == ')') return(NIL);
+X UNGETC_FCN(c,f);
+X tmp = lreadr(f);
+X if EQ(tmp,sym_dot)
+X {tmp = lreadr(f);
+X c = flush_ws(f,"end of file inside list");
+X if (c != ')') err("missing close paren",NIL);
+X return(tmp);}
+X return(cons(tmp,lreadparen(f)));}
+X
+XLISP lreadtk(long j)
+X{int flag;
+X char *p;
+X LISP tmp;
+X int adigit;
+X p = tkbuffer;
+X p[j] = 0;
+X if (user_readt != NULL)
+X {tmp = (*user_readt)(p,j,&flag);
+X if (flag) return(tmp);}
+X if (*p == '-') p+=1;
+X adigit = 0;
+X while(isdigit(*p)) {p+=1; adigit=1;}
+X if (*p=='.')
+X {p += 1;
+X while(isdigit(*p)) {p+=1; adigit=1;}}
+X if (!adigit) goto a_symbol;
+X if (*p=='e')
+X {p+=1;
+X if (*p=='-'||*p=='+') p+=1;
+X if (!isdigit(*p)) goto a_symbol; else p+=1;
+X while(isdigit(*p)) p+=1;}
+X if (*p) goto a_symbol;
+X return(flocons(atof(tkbuffer)));
+X a_symbol:
+X return(rintern(tkbuffer));}
+X
+XLISP copy_list(LISP x)
+X{if NULLP(x) return(NIL);
+X STACK_CHECK(&x);
+X return(cons(car(x),copy_list(cdr(x))));}
+X
+XLISP apropos(LISP matchl)
+X{LISP result = NIL,l,ml;
+X char *pname;
+X for(l=oblistvar;CONSP(l);l=CDR(l))
+X {pname = get_c_string(CAR(l));
+X ml=matchl;
+X while(CONSP(ml) && strstr(pname,get_c_string(CAR(ml))))
+X ml=CDR(ml);
+X if NULLP(ml)
+X result = cons(CAR(l),result);}
+X return(result);}
+X
+XLISP fopen_c(char *name,char *how)
+X{LISP sym;
+
+
+X long flag;
+X flag = no_interrupt(1);
+
+X sym = newcell(tc_c_file);
+X sym->storage_as.c_file.f = (FILE *)NULL;
+X sym->storage_as.c_file.name = (char *)NULL;
+X if (!(sym->storage_as.c_file.f = fopen(name,how)))
+X {perror(name);
+X put_st("\n");
+X err("could not open file",NIL);}
+X sym->storage_as.c_file.name = (char *) must_malloc(strlen(name)+1);
+X strcpy(sym->storage_as.c_file.name,name);
+X no_interrupt(flag);
+X return(sym);}
+X
+XLISP fopen_l(LISP name,LISP how)
+X{return(fopen_c(get_c_string(name),NULLP(how) ? "r" : get_c_string(how)));}
+X
+XLISP delq(LISP elem,LISP l)
+X{if NULLP(l) return(l);
+X STACK_CHECK(&elem);
+X if EQ(elem,car(l)) return(cdr(l));
+X setcdr(l,delq(elem,cdr(l)));
+X return(l);}
+X
+XLISP fclose_l(LISP p)
+
+
+X{long flag;
+X flag = no_interrupt(1);
+
+X if NTYPEP(p,tc_c_file) err("not a file",p);
+X file_gc_free(p);
+
+
+X no_interrupt(flag);
+X return(NIL);}
+X
+
+XLISP vload(char *fname,long cflag)
+X{LISP form,result,tail,lf;
+X FILE *f;
+X put_st("loading ");
+X put_st(fname);
+X put_st("\n");
+X lf = fopen_c(fname,"r");
+X f = lf->storage_as.c_file.f;
+X result = NIL;
+X tail = NIL;
+X while(1)
+X {form = lreadf(f);
+X if EQ(form,eof_val) break;
+X if (cflag)
+X {form = cons(form,NIL);
+X if NULLP(result)
+X result = tail = form;
+X else
+X tail = setcdr(tail,form);}
+X else
+X leval(form,NIL);}
+X fclose_l(lf);
+X put_st("done.\n");
+X return(result);}
+X
+XLISP load(LISP fname,LISP cflag)
+X{return(vload(get_c_string(fname),NULLP(cflag) ? 0 : 1));}
+X
+
+
+XLISP save_forms(LISP fname,LISP forms,LISP how)
+
+X{char *cname,*chow = NULL;
+X LISP l,lf;
+X FILE *f;
+X cname = get_c_string(fname);
+X if EQ(how,NIL) chow = "w";
+X else if EQ(how,cintern("a")) chow = "a";
+X else err("bad argument to save-forms",how);
+X put_st((*chow == 'a') ? "appending" : "saving");
+X put_st(" forms to ");
+X put_st(cname);
+X put_st("\n");
+X lf = fopen_c(cname,chow);
+X f = lf->storage_as.c_file.f;
+X for(l=forms;NNULLP(l);l=cdr(l))
+X {lprin1f(car(l),f);
+X putc('\n',f);}
+X fclose_l(lf);
+X put_st("done.\n");
+X return(truth);}
+X
+XLISP quit(void)
+X{longjmp(errjmp,2);
+X return(NIL);}
+X
+XLISP nullp(LISP x)
+X{if EQ(x,NIL) return(truth); else return(NIL);}
+X
+XLISP arglchk(LISP x)
+X{
+X#if (!ENVLOOKUP_TRICK)
+X LISP l;
+X if SYMBOLP(x) return(x);
+X for(l=x;CONSP(l);l=CDR(l));
+X if NNULLP(l) err("improper formal argument list",x);
+X#endif
+X return(x);}
+X
+Xvoid file_gc_free(LISP ptr)
+X{if (ptr->storage_as.c_file.f)
+X {fclose(ptr->storage_as.c_file.f);
+X ptr->storage_as.c_file.f = (FILE *) NULL;}
+X if (ptr->storage_as.c_file.name)
+X {free(ptr->storage_as.c_file.name);
+X ptr->storage_as.c_file.name = NULL;}}
+X
+Xvoid file_prin1(LISP ptr,FILE *f)
+X{char *name;
+X name = ptr->storage_as.c_file.name;
+X fput_st(f,"#<FILE ");
+X sprintf(tkbuffer," %p",ptr->storage_as.c_file.f);
+X fput_st(f,tkbuffer);
+X if (name)
+X {fput_st(f," ");
+X fput_st(f,name);}
+X fput_st(f,">");}
+X
+XFILE *get_c_file(LISP p,FILE *deflt)
+X{if (NULLP(p) && deflt) return(deflt);
+X if NTYPEP(p,tc_c_file) err("not a file",p);
+X if (!p->storage_as.c_file.f) err("file is closed",p);
+X return(p->storage_as.c_file.f);}
+X
+XLISP lgetc(LISP p)
+X{int i;
+X i = f_getc(get_c_file(p,stdin));
+X return((i == EOF) ? NIL : flocons((double)i));}
+X
+XLISP lputc(LISP c,LISP p)
+X{long flag;
+X int i;
+X FILE *f;
+X f = get_c_file(p,stdout);
+X if FLONUMP(c)
+X i = (int)FLONM(c);
+X else
+X i = *get_c_string(c);
+X flag = no_interrupt(1);
+X putc(i,f);
+
+
+X no_interrupt(flag);
+X return(NIL);}
+X
+
+XLISP lputs(LISP str,LISP p)
+X{fput_st(get_c_file(p,stdout),get_c_string(str));
+X return(NIL);}
+X
+XLISP lftell(LISP file)
+X{return(flocons((double)ftell(get_c_file(file,NULL))));}
+X
+
+
+XLISP lfseek(LISP file,LISP offset,LISP direction)
+
+X{return((fseek(get_c_file(file,NULL),get_c_long(offset),get_c_long(direction)))
+X ? NIL : truth);}
+X
+XLISP parse_number(LISP x)
+X{char *c;
+X c = get_c_string(x);
+X return(flocons(atof(c)));}
+X
+Xvoid init_subrs(void)
+X{init_subrs_1();
+X init_subrs_a();}
+X
+XLISP closure_code(LISP exp)
+X{return(exp->storage_as.closure.code);}
+X
+XLISP closure_env(LISP exp)
+X{return(exp->storage_as.closure.env);}
+X
+XLISP lwhile(LISP form,LISP env)
+X{LISP l;
+X while(NNULLP(leval(car(form),env)))
+X for(l=cdr(form);NNULLP(l);l=cdr(l))
+X leval(car(l),env);
+X return(NIL);}
+X
+XLISP nreverse(LISP x)
+X{LISP newp,oldp,nextp;
+X newp = NIL;
+X for(oldp=x;CONSP(oldp);oldp=nextp)
+X {nextp=CDR(oldp);
+X CDR(oldp) = newp;
+X newp = oldp;}
+X return(newp);}
+X
+Xvoid init_subrs_1(void)
+X{init_subr_2("cons",cons);
+X init_subr_1("car",car);
+X init_subr_1("cdr",cdr);
+X init_subr_2("set-car!",setcar);
+X init_subr_2("set-cdr!",setcdr);
+X init_subr_2("+",plus);
+X init_subr_2("-",difference);
+X init_subr_2("*",ltimes);
+X init_subr_2("/",quotient);
+X init_subr_2(">",greaterp);
+X init_subr_2("<",lessp);
+X init_subr_2("eq?",eq);
+X init_subr_2("eqv?",eql);
+X init_subr_2("=",eql);
+X init_subr_2("assq",assq);
+X init_subr_2("delq",delq);
+X init_subr_0("read",lread);
+X init_subr_0("eof-val",get_eof_val);
+X init_subr_1("print",lprint);
+X init_subr_2("eval",leval);
+X init_fsubr("define",leval_define);
+X init_fsubr("lambda",leval_lambda);
+X init_msubr("if",leval_if);
+X init_fsubr("while",leval_while);
+X init_msubr("begin",leval_progn);
+X init_fsubr("set!",leval_setq);
+X init_msubr("or",leval_or);
+X init_msubr("and",leval_and);
+X init_fsubr("*catch",leval_catch);
+X init_subr_2("*throw",lthrow);
+X init_fsubr("quote",leval_quote);
+X init_lsubr("apropos",apropos);
+X init_subr_1("copy-list",copy_list);
+X init_lsubr("gc-status",gc_status);
+X init_lsubr("gc",user_gc);
+X init_subr_2("load",load);
+X init_subr_1("pair?",consp);
+X init_subr_1("symbol?",symbolp);
+X init_subr_1("number?",numberp);
+X init_msubr("let-internal",leval_let);
+X init_subr_1("let-internal-macro",let_macro);
+X init_subr_2("symbol-bound?",symbol_boundp);
+X init_subr_2("symbol-value",symbol_value);
+X init_subr_3("set-symbol-value!",setvar);
+X init_fsubr("the-environment",leval_tenv);
+X init_subr_2("error",lerr);
+X init_subr_0("quit",quit);
+X init_subr_1("not",nullp);
+X init_subr_1("null?",nullp);
+X init_subr_2("env-lookup",envlookup);
+X init_subr_1("reverse",reverse);
+X init_lsubr("symbolconc",symbolconc);
+X init_subr_3("save-forms",save_forms);
+X init_subr_2("fopen",fopen_l);
+X init_subr_1("fclose",fclose_l);
+X init_subr_1("getc",lgetc);
+X init_subr_2("putc",lputc);
+X init_subr_2("puts",lputs);
+X init_subr_1("ftell",lftell);
+X init_subr_3("fseek",lfseek);
+X init_subr_1("parse-number",parse_number);
+X init_subr_2("%%stack-limit",stack_limit);
+X init_subr_1("intern",intern);
+X init_subr_2("%%closure",closure);
+X init_subr_1("%%closure-code",closure_code);
+X init_subr_1("%%closure-env",closure_env);
+X init_fsubr("while",lwhile);
+X init_subr_1("nreverse",nreverse);
+X init_subr_0("allocate-heap",allocate_aheap);
+X init_subr_1("gc-info",gc_info);}
+X
+X/* err0,pr,prp are convenient to call from the C-language debugger */
+X
+Xvoid err0(void)
+X{err("0",NIL);}
+X
+Xvoid pr(LISP p)
+X{if (looks_pointerp(p))
+X lprint(p);
+X else
+X put_st("invalid\n");}
+X
+Xvoid prp(LISP *p)
+X{if (!p) return;
+X pr(*p);}
+END_OF_FILE
+if test 49106 -ne `wc -c <'slib.c'`; then
+echo shar: \"'slib.c'\" unpacked with wrong size!
+fi
+# end of 'slib.c'
+fi
+echo shar: End of archive 3 \(of 3\).
+cp /dev/null ark3isdone
+
+
+MISSING=""
+for I in 1 2 3 ; do
+if test ! -f ark${I}isdone ; then
+MISSING="${MISSING} ${I}"
+fi
+done
+if test "${MISSING}" = "" ; then
+echo You have unpacked all 3 archives.
+rm -f ark[1-9]isdone
+else
+echo You still need to unpack the following archives:
+echo " " ${MISSING}
+fi
+## End of shell archive.
+exit 0
+
