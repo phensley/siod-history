@@ -1,0 +1,307 @@
+ *                        COPYRIGHT (c) 1989 BY                             *
+ *        PARADIGM ASSOCIATES INCORPORATED, CAMBRIDGE, MASSACHUSETTS.       *
+ *			   ALL RIGHTS RESERVED                              *
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in
+supporting documentation, and that the name of Paradigm Associates Inc
+not be used in advertising or publicity pertaining to distribution of
+the software without specific, written prior permission.
+
+PARADIGM DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
+PARADIGM BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
+ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+SOFTWARE.
+
+Documentation for Release 1.4 20-NOV-89
+
+This release is functionally the same as release 1.3 but has been
+remodularized in response to people who have been encorporating SIOD
+as an interpreted extension language in other systems.
+
+gjc@paradigm.com
+George Carrette
+
+   
+Paradigm Associates Inc          Phone: 617-492-6079
+29 Putnam Ave, Suite 6
+Cambridge, MA 02138
+
+[Files:]
+
+ siod.h    Declarations 
+ slib.c    scheme library.
+ siod.c    a main program.
+ siod.scm  (optional) Some scheme code
+
+[Motivation:]
+
+The most obvious thing one should notice is that this lisp implementation 
+is extremely small. For example, the resulting binary executable file 
+on a VAX/VMS system with /notraceback/nodebug is 17 kilo-bytes.
+
+Small enough to understand, the source file slib.c is 26 kilo-bytes.
+
+Small enough to include in the smallest applications which require
+command interpreters or extension languages.
+
+We also want to be able to run code from the book "Structure and
+Interpretation of Computer Programs." Replacing the evaluator with an
+explicit control "flat-coded" one as in chapter 5 would allow garbage
+collection to take place at any time, not just at toplevel in the
+read-eval-print loop, as herein implemented. This is left as an
+exersize for the reader.
+
+Techniques used will be familiar to most lisp implementors.  Having
+objects be all the same size, and having only two statically allocated
+spaces simplifies and speeds up both consing and gc considerably.  the
+MSUBR hack allows for a modular implementation of tail recursion, 	
+an extension of the FSUBR that is, as far as I know, original.
+
+Error handling is rather crude. A topic taken with machine fault,
+exception handling, tracing, debugging, and state recovery which we
+could cover in detail, but clearly beyond the scope of this
+implementation. Suffice it to say that if you have a good symbolic
+debugger you can set a break point at "err" and observe in detail all
+the arguments and local variables of the procedures in question, since
+there is no ugly "casting" of data types.  If X is an offending or
+interesting object then examining X->type will give you the type, and
+X->storage_as.cons will show the car and the cdr.
+
+[Garbage Collection:]
+
+As one can see from the source, garbage collection is really quite an easy
+thing. The procedure gc_relocate is about 25 lines of code, and
+scan_newspace is about 15.
+
+The real tricks in handling garbage collection are (in a copying gc):
+ (1) keeping track of locations containing objects
+ (2) parsing the heap (in the space scanning)
+
+The procedure gc_protect is called once on each "global" location which
+will contain a lisp object.
+
+That leaves the stack. Now, if we had chosen not to use the argument
+and return-value passing mechanism provided by the C-language
+implementation, (also known as the "machine stack" and "machine
+procedure calling mechanism) this lisp would be larger, slower, and
+rather more difficult to read and understand. Furthermore it would be
+considerably more painful to *add* functionality in the way of SUBR's
+to the implementation.
+
+Aside from writing a very machine and compiler specific assembling language
+routine for each C-language implementation, embodying assumptions about
+the placement choices for arguments and local values, etc, we
+are left with the following limitation: "YOU CAN GC ONLY AT TOP-LEVEL"
+
+However, this fits in perfectly with the programming style imposed in
+many user interface implementations including the MIT X-Windows Toolkit.
+In the X Toolkit a callback or work procedure is not supposed to spend
+much time implementing the action. Therefore it cannot have allocated
+much storage, and the callback trampoline mechanism can post a
+work-procedure to do a gc when needed.
+
+Our simple object format makes parsing the heap rather trivial.
+In more complex situations one ends up requiring object headers or markers
+of some kind to keep track of the actual storage lengths of objects
+and what components of objects are lisp pointers.
+
+
+[Compilation:]
+
+The code has been compiled and run by the author on Sun III and IV,
+Encore Multimax, 4.3BSD VAX, VAX/VMS, and AMIGA 500 using the Lattice C
+compiler.
+
+On all unix machines use (with floating-point flags as needed)
+
+  %cc -o siod siod.c slib.c
+
+on VAX/VMS:
+
+  $ cc siod
+  $ cc slib
+  $ link siod,slib,sys$input:/opt
+  sys$library:vaxcrtl/share
+  $ siod == "$" + F$ENV("DEFAULT") + "SIOD"
+
+on AMIGA 500, ignore warning messages about return value mismatches,
+  %lc siod.c
+  %lc slib.c
+  %blink lib:c.o,siod.o,slib.o to siod lib lib:lcm.lib,lib:lc.lib,lib:amiga.lib
+
+
+[Invocation:]
+
+siod [-hXXXXX] [-iXXXXX]
+ -h where XXXXX is an integer, to specify the heap size, in obj cells,
+ -i where XXXXX is a filename to load before going into the repl loop.
+
+  Example:
+   siod -isiod.scm -h100000
+
+[System:]
+ 
+The interrupts called SIGINT and SIGFPE by the C runtime system are
+handled by invoking the lisp error procedure. SIGINT is usually caused
+by the CONTROL-C character and SIGFPE by floating point overflow or underflow.
+
+[Syntax:]
+
+The only special characters are the parenthesis and single quote.
+Everything else, besides whitespace of course, will make up a regular token.
+These tokens are either symbols or numbers depending on what they look like.
+Dotted-list notation is not supported on input, only on output.
+
+[Special forms:]
+
+The CAR of a list is evaluated first, if the value is a SUBR of type 9 or 10
+then it is a special form.
+
+(define symbol value) is presently like (set! symbol value).
+
+(define (f . arglist) . body) ==> (define f (lambda arglist . body))
+
+(lambda arglist . body) Returns a closure.
+
+(if pred val1 val2) If pred evaluates to () then val2 is evaluated else val1.
+
+(begin . body) Each form in body is evaluated with the result of the last
+returned.
+
+(set! symbol value) Evaluates value and sets the local or global value of
+the symbol.
+
+(or x1 x2 x3 ...) Returns the first Xn such that Xn evaluated non-().
+
+(and x1 x2 x3 ...) Keeps evaluating Xj until one returns (), or Xn.
+
+(quote form). Input syntax 'form, returns form without evaluation.
+
+(let pairlist . body) Each element in pairlist is (variable value).
+Evaluates each value then sets of new bindings for each of the variables,
+then evaluates the body like the body of a progn. This is actually
+implemented as a macro turning into a let-internal form.
+
+(the-environment) Returns the current lexical environment.
+
+[Macro Special forms:]
+
+If the CAR of a list evaluates to a symbol then the value of that symbol
+is called on a single argument, the original form. The result of this
+application is a new form which is recursively evaluated.
+
+[Built-In functions:]
+
+These are all SUBR's of type 4,5,6,7, taking from 0 to 3 arguments
+with extra arguments ignored, (not even evaluated!) and arguments not
+given defaulting to (). SUBR's of type 8 are lexprs, receiving a list
+of arguments. Order of evaluation of arguments will depend on the
+implementation choice of your system C compiler.
+
+consp cons car cdr setcar setcdr
+
+number? + - * / < > eqv?
+The arithmetic functions all take two arguments.
+
+eq?, pointer objective identity, eqv? also works on numbers.
+
+symbol?
+
+symbol-bound? takes an optional environment structure.
+symbol-value also takes optional env.
+set-symbol-value also takes optional env.
+
+env-lookup takes a symbol and an environment structure. If it returns
+non-nil the CAR will be the value of the symbol.
+
+assq
+
+read,print
+
+eval, takes a second argument, an environment.
+
+copy-list. Copies the top level conses in a list.
+
+oblist, returns a copy of the list of the symbols that have been interned.
+
+gc-status, prints out the status of garbage collection services, the
+number of cells allocated and the number of cells free. If given
+a () argument turns gc services off, if non-() then turns gc services on.
+
+load, given a filename (which must be a symbol, there are no strings)
+will read/eval all the forms in that file.
+
+quit, will exit back to the operating system.
+
+error, takes a symbol as its first argument, prints the pname of this
+as an error message. The second argument (optional) is an offensive
+object. The global variable errobj gets set to this object for later
+observation.
+
+null?, not. are the same thing.
+
+edit is a VMS specific function that takes a single filename argument
+and calls the sharable EDT editor to edit the file.
+
+[Utility procedures in siod.scm:]
+
+Shows how to define macros.
+
+cadr,caddr,cdddr,replace,list.
+
+(defvar variable default-value)
+
+And for us old maclisp hackers, setq and defun, and progn, etc.
+
+[A streams implementation:]
+
+The first thing we must do is decide how to represent a stream.
+There is only one reasonable data structure available to us, the list.
+So we might use (<stream-car> <cache-flag> <cdr-cache> <cdr-procedure>)
+
+the-empty-stream is just ().
+
+empty-stream?
+
+head
+
+tail
+
+cons-stream is a special form. Wraps a lambda around the second argument.
+
+*cons-stream is the low-level constructor used by cons-stream.
+
+[Benchmarks:]
+
+A standard-fib procedure is included in siod.scm so that everyone will
+use the same definition in any reports of speed. Make sure the return
+result is correct. use command line argument of
+ %siod -h100000 -isiod.scm
+
+(standard-fib 10) => 55 ; 795 cons work.
+(standard-fib 15) => 610 ; 8877 cons work.
+(standard-fib 20) => 6765 ; 98508 cons work.
+
+[Porting:]
+
+The only code under #ifdef is the definition of myruntime, which
+should be defined to return a double float, the number of cpu seconds
+used by the process so far. This is currently specific for encore and
+sun unix, with a default unix which would work on any 4.2BSD derived
+system. The other specific case is vms, and the last default has
+myruntime calling the time function, which usually means an integer
+number of realtime seconds. Nested ifdef's are very difficult to
+read of course. Sorry.
+
+There is a bit of type casting in close_open_files and vload. The
+pname of an un-interned symbol is used as a pointer to FILE. This
+saves the code (a conser, a print case, and two gc cases) of defining
+a new data type for keeping track of binary data. Are there any machines
+where a pointer to char and a pointer to FILE are different?
+

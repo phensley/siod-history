@@ -1,0 +1,11 @@
+This is version 1.4 of Siod, Scheme In One Defun.
+
+It is a very small implementation of the Scheme programming language.
+
+George Carrette, NOV 6, 1989. gjc@paradigm.com
+
+See siod.doc and the source file slib.c for more information.
+
+The file slib.c may serve as a subroutine library to add scheme
+interpreter functionality to any existing program.
+
