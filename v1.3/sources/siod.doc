@@ -1,0 +1,273 @@
+SIOD: Scheme In One Defun
+(c) Copyright 1988 George Carrette, g...@bu-it.bu.edu
+For demonstration purposes only.
+
+If your interests run to practical applications of symbolic programming
+techniques, in LISP, Macsyma, C, or other language:
+
+Paradigm Associates Inc Phone: 617-492-6079
+29 Putnam Ave, Suite 6
+Cambridge, MA 02138
+
+Documentation for Release 1.3 1-MAY-88
+Updated with more detail for experimenters on 17-MAY-88.
+
+[SUBJECT INDEX:]
+[SUBJECT INDEX]
+[FILES]
+[COMPILATION]
+[INVOCATION]
+[SYSTEM]
+[SYNTAX]
+[SPECIAL FORMS]
+[MACRO SPECIAL FORMS]
+[BUILT-IN PROCEDURES]
+[UTILITIES IN SIOD.SCM]
+[A STREAMS IMPLEMENTATION]
+[BENCHMARKS]
+[PORTING]
+[ADDING NEW SUBRS]
+
+[Files:]
+
+siod.c The source in C, approximately 28 thousand bytes.
+siod.doc This file, approximately 8 thousand bytes.
+siod.scm Some utility function written in Scheme.
+
+[Compilation:]
+
+The code has been compiled and run by the author on Sun III and IV,
+Encore Multimax, 4.3BSD VAX, VAX/VMS, and AMIGA 500 using the Lattice C
+compiler.
+
+On all unix machines use
+
+%cc -o siod siod.c
+
+on VAX/VMS:
+
+$ cc siod
+$ link siod,sys$input:/opt
+sys$library:vaxcrtl/share
+$ siod == "$" + F$ENV("DEFAULT") + "SIOD"
+
+on AMIGA 500, ignore warning messages about return value mismatches,
+%lc siod.c
+%blink lib:c.o,siod.o to siod lib lib:lcm.lib,lib:lc.lib,lib:amiga.lib
+
+
+[Invocation:]
+
+siod [-hXXXXX] [-iXXXXX]
+-h where XXXXX is an integer, to specify the heap size, in obj cells,
+-i where XXXXX is a filename to load before going into the repl loop.
+
+Example:
+siod -isiod.scm -h100000
+
+[System:]
+
+The interrupts called SIGINT and SIGFPE by the C runtime system are
+handled by invoking the lisp error procedure. SIGINT is usually caused
+by the CONTROL-C character and SIGFPE by floating point overflow or underflow.
+
+[Syntax:]
+
+The only special characters are the parenthesis and single quote.
+Everything else, besides whitespace of course, will make up a regular token.
+These tokens are either symbols or numbers depending on what they look like.
+Dotted-list notation is not supported on input, only on output.
+
+[Special forms:]
+
+The CAR of a list is evaluated first, if the value is a SUBR of type 9 or 10
+then it is a special form.
+
+(define symbol value) is presently like (set! symbol value).
+
+(define (f . arglist) . body) ==> (define f (lambda arglist . body))
+
+(lambda arglist . body) Returns a closure.
+
+(if pred val1 val2) If pred evaluates to () then val2 is evaluated else val1.
+
+(begin . body) Each form in body is evaluated with the result of the last
+returned.
+
+(set! symbol value) Evaluates value and sets the local or global value of
+the symbol.
+
+(or x1 x2 x3 ...) Returns the first Xn such that Xn evaluated non-().
+
+(and x1 x2 x3 ...) Keeps evaluating Xj until one returns (), or Xn.
+
+(quote form). Input syntax 'form, returns form without evaluation.
+
+(let pairlist . body) Each element in pairlist is (variable value).
+Evaluates each value then sets of new bindings for each of the variables,
+then evaluates the body like the body of a progn. This is actually
+implemented as a macro turning into a let-internal form.
+
+(the-environment) Returns the current lexical environment.
+
+[Macro Special forms:]
+
+If the CAR of a list evaluates to a symbol then the value of that symbol
+is called on a single argument, the original form. The result of this
+application is a new form which is recursively evaluated.
+
+[Built-In functions:]
+
+These are all SUBR's of type 4,5,6,7, taking from 0 to 3 arguments
+with extra arguments ignored, (not even evaluated!) and arguments not
+given defaulting to (). SUBR's of type 8 are lexprs, receiving a list
+of arguments. Order of evaluation of arguments will depend on the
+implementation choice of your system C compiler.
+
+consp cons car cdr setcar setcdr
+
+number? + - * / < > eqv?
+The arithmetic functions all take two arguments.
+
+eq?, pointer objective identity, eqv? also works on numbers.
+
+symbol?
+
+symbol-bound? takes an optional environment structure.
+symbol-value also takes optional env.
+set-symbol-value also takes optional env.
+
+env-lookup takes a symbol and an environment structure. If it returns
+non-nil the CAR will be the value of the symbol.
+
+assq
+
+read,print
+
+eval, takes a second argument, an environment.
+
+copy-list. Copies the top level conses in a list.
+
+oblist, returns a copy of the list of the symbols that have been interned.
+
+gc-status, prints out the status of garbage collection services, the
+number of cells allocated and the number of cells free. If given
+a () argument turns gc services off, if non-() then turns gc services on.
+
+load, given a filename (which must be a symbol, there are no strings)
+will read/eval all the forms in that file.
+
+quit, will exit back to the operating system.
+
+error, takes a symbol as its first argument, prints the pname of this
+as an error message. The second argument (optional) is an offensive
+object. The global variable errobj gets set to this object for later
+observation.
+
+null?, not. are the same thing.
+
+edit is a VMS specific function that takes a single filename argument
+and calls the sharable EDT editor to edit the file.
+
+[Utility procedures in siod.scm:]
+
+Shows how to define macros.
+
+cadr,caddr,cdddr,replace,list.
+
+(defvar variable default-value)
+
+And for us old maclisp hackers, setq and defun, and progn, etc.
+
+[A streams implementation:]
+
+The first thing we must do is decide how to represent a stream.
+There is only one reasonable data structure available to us, the list.
+So we might use (<stream-car> <cache-flag> <cdr-cache> <cdr-procedure>)
+
+the-empty-stream is just ().
+
+empty-stream?
+
+head
+
+tail
+
+cons-stream is a special form. Wraps a lambda around the second argument.
+
+*cons-stream is the low-level constructor used by cons-stream.
+
+[Benchmarks:]
+
+A standard-fib procedure is included in siod.scm so that everyone will
+use the same definition in any reports of speed. Make sure the return
+result is correct. use command line argument of
+%siod -h100000 -isiod.scm
+
+(standard-fib 10) => 55 ; 795 cons work.
+(standard-fib 15) => 610 ; 8877 cons work.
+(standard-fib 20) => 6765 ; 98508 cons work.
+
+[Porting:]
+
+The only code under #ifdef is the definition of myruntime, which
+should be defined to return a double float, the number of cpu seconds
+used by the process so far. This is currently specific for encore and
+sun unix, with a default unix which would work on any 4.2BSD derived
+system. The other specific case is vms, and the last default has
+myruntime calling the time function, which usually means an integer
+number of realtime seconds. Nested ifdef's are very difficult to
+read of course. Sorry.
+
+There is a bit of type casting in close_open_files and vload. The
+pname of an un-interned symbol is used as a pointer to FILE. This
+saves the code (a conser, a print case, and two gc cases) of defining
+a new data type for keeping track of binary data. Are there any machines
+where a pointer to char and a pointer to FILE are different?
+
+There should be no problem with integers vs longs on short integer
+machines.
+
+[Adding new SUBRS:]
+(1) choose a name for it and add a forward declaration to the group
+of various forward declarations near the beginning of the file.
+The arguments must all be of type struct obj *, as is the return value.
+(2) choose a lisp name and add a call to init_subr for it near all the
+other calls in the procedure init_subrs. The first argument to init_subr
+is the lisp name as a string, the second is a subr type code, and the
+third is the name of the C coded procedure.
+Dont bother with special forms without detailed understanding of how
+msubrs in particular work. Use tc_subr_0 to get zero arguments through
+tc_subr_3 for three arguments. Otherwise use tc_lsubr to receive a
+single list of evaluated arguments.
+(3) If you need to use stack lisp variables (you can always use
+calls to cintern to get a handle on a symbol however) these must
+be declared before the procedure scan_registers, always init to NIL,
+and explicitely relocated in the scan_register procedure.
+(4) inside your subr you need not worry about gc relocating since the gc
+wont go off except at toplevel. You must of course be conservative
+about your using of cons and flocons if your procedure will have to
+run long. Since symbol pnames ARE NOT RELOCATED you do not have to worry
+about passing the pname string of a symbol to a system procedure that will
+keep an unprotected pointer to it, even across toplevel calls to GC.
+However, do not pass pointers to things such as &(FLONM(x)) if the
+called procedure is going to keep that pointer in its internal storage
+after it returns. Never pass pointers to lisp data to system routines
+which may asynchronously go off (such as VMS AST's) at a later time
+and use that pointer data. Instead you may want to cons an uninterned
+symbol, malloc some data, and set the symbol PNAME to that data
+if you want to keep track of it. Example kludge:
+m = "Binary_DATA_"
+x = (char *) malloc(3+strlen(m)+1+data_needed);
+y = symcons(x,NIL);
+sprintf(x,"%s%3d",m,data_needed);
+The print name of the symbol Y will be harmless looking enough,
+because of the zero terminating byte put in by sprintf,
+but the C programmer will know that its pname points to more
+interesting goodies inside. The VCELL part of the symbol should
+come in handy for storing other things, like an alist of object
+properties perhaps. This just goes to show you that you dont need
+to go through a lot of trouble, like definining new primitive lisp
+object types and modifying the printer, to get something useful.
+
+
