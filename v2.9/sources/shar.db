@@ -1,0 +1,24 @@
+readme
+! the source
+siod.h
+siodp.h
+siod.c
+slib.c
+sliba.c
+siodm.c
+trace.c
+! documentation
+siod.doc
+siod.tim
+! lisp code
+pratt.scm
+siod.scm
+! unix-specific
+makefile
+siod.1
+! vms-specific
+makefile.com
+descrip.mms
+siod.opt
+! this file:
+shar.db
