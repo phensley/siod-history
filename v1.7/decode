@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+
+# hack to decode a VMS_SHARE archive.
+
+import codecs
+import os
+import re
+import sys
+
+CWD = os.path.abspath(os.path.dirname(__file__))
+ROOT = os.path.join(CWD, 'sources')
+
+# backtick escape pattern
+RE_ESC = re.compile('(`\d+)', re.M)
+
+def esc(m):
+    return chr(int(m.group(0)[1:]))
+
+def main():
+    # prep output dir
+    if not os.path.exists(ROOT):
+        os.makedirs(ROOT)
+
+    # read 7-bit ascii data
+    raw = open('archive.txt', 'rb').read().decode('ascii')
+
+    # convert 3-digit base-10 escapes to characters
+    esc = lambda m: chr(int(m.group(0)[1:]))
+    raw = RE_ESC.sub(esc, raw)
+
+    lines = raw.split('\n')
+
+    infile = 0
+    name = None
+    body = ''
+    for i, line in enumerate(lines):
+        # skip empty lines
+        if not line:
+            continue
+
+        # extract filename for next blob
+        if line.startswith('$ FILE_IS = "'):
+            name = line.split('"')[1].lower()
+            infile = 0
+            continue
+
+        # accumulate blob data
+        if line[0] == 'X':
+            line = line[1:]
+            if not infile:
+                # start new file
+                body = line
+                infile = 1
+                continue
+
+            # append line to body
+            body += line + '\n'
+
+        elif line[0] == '$' and infile:
+            # found end of blob data, write output
+            infile = 0
+            path = os.path.join(ROOT, name)
+            print('writing %r' % name)
+            out = open(path, 'wb')
+            out.write(body.encode('utf-8'))
+            out.close()
+
+
+if __name__ == '__main__':
+    main()
+
