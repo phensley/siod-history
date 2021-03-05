@@ -1,0 +1,53 @@
+.TH SIOD 1C LOCAL 
+.SH NAME
+siod \- small scheme interpreter (Scheme In One Defun).
+.SH SYNOPSIS
+.B siod
+[-hXXXXX] [-iXXXXX] [-gX] [-oXXXXX]
+.SH DESCRIPTION
+.I Siod
+is a very small scheme interpreter which can be used for calculations
+or included as a command interpreter or extension/macro language in other
+applications. See the documentation for interfacing requirements and how to
+add user-defined data types.
+
+.RE
+.SS COMMAND LINE OPTIONS
+.TP 8
+.BI \-h "XXXXX"
+The
+.I XXXXX
+should be an integer, specifying the number of cons cells to
+allocate in the heap. The default is 5000.
+.TP
+.BI \-i "XXXXX"
+The 
+.I XXXXX
+should be the name of an init file to load before going into
+the read/eval/print loop.
+.TP
+.BI \-g "X"
+The
+.I X
+is 1 for a stop and copy garbage collector (the default), 0 for a mark
+and sweep one.
+.TP
+.BI \-o "XXXXX"
+The
+.I XXXXX
+should be an integer, specifying the size of the obarray (symbol hash table)
+to use. Defaults to 100. Each array element is a list of symbols.
+.SH FILES
+siod.h siod.doc siod.scm slib.c siod.c
+.PD
+.SH SEE ALSO
+.I Structure and Interpretation of Computer Programs
+, by Ableson and Sussman, MIT Press.
+.SH DIAGNOSTICS
+Error messages may also set the variable errobj to the offending object.
+.SH BUGS
+With -g1 it does not GC during EVAL, only before each READ/EVAL/PRINT cycle.
+It does GC during EVAL with -g0, but that code may not run without modification
+on all architectures.
+.SH VERSION
+Current version is 2.4, 27-APR-90, by George Carrette. GJC\@PARADIGM.COM
