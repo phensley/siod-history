@@ -1,0 +1,11 @@
+# If cc doesn't work here, try changing cc to gcc (GNU C)	    CC=cc
+	    CFLAGS= -O
+
+siod:	siod.o slib.o sliba.o
+	$(CC) -o siod siod.o slib.o sliba.o
+siod.o: siod.c siod.h
+	$(CC) $(CFLAGS) -c siod.c
+slib.o:	slib.c siod.h siodp.h
+	$(CC) $(CFLAGS) -c slib.c
+sliba.o:	sliba.c siod.h siodp.h
+	$(CC) $(CFLAGS) -c sliba.c
