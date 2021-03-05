@@ -1,0 +1,90 @@
+#!/usr/local/bin/siod -v01,-m2 -*-mode:lisp-*-
+
+(require 'http-stress.scm)
+(require-so (so-ext 'regex))
+(require-so (so-ext 'ss))
+
+(define *http-proxy* nil)
+(define *show-header* nil)
+
+(define (main)
+  (set! *http-proxy* (lkey-default (cdddr *args*) "proxy"))
+  (set! *show-header* (lkey-default (cdddr *args*) "header"))
+  (if (and (lkey-default (cdddr *args*) "username")
+	   (lkey-default (cdddr *args*) "password"))
+      (http-set-basic-authorization 
+       (lkey-default (cdddr *args*) "username")
+       (lkey-default (cdddr *args*) "password")))
+  (http.get (or (larg-default (cdddr *args*) 0)
+		(error "no URL specified"))
+	    (larg-default (cdddr *args*) 1)))
+
+(define (http.get from into)
+  (if *http-proxy*
+      (http.get-proxy from into)
+    (http.get-direct from into)))
+
+(define (http.get-direct from into)
+  (let ((p (set! p (parse-url from)))
+	(node nil))
+    (or (equal? "http"  (cdr (assq 'service p)))
+	(error "service not http" (cdr (assq 'service p))))
+    (set! node (cdr (assq 'node p)))
+    (if (string-search ":" node)
+	(begin (set! *http-server-host*
+		     (substring node 0 (string-search ":" node)))
+	       (set! *http-server-port*
+		     (string->number
+		      (substring
+		       node
+		       (+ 1 (string-search ":" node))))))
+      (set! *http-server-host* node))
+    (http-handle-data (http (string-append (cdr (assq 'ident p))
+					   (cdr (assq 'arg p)))
+			    "GET"
+			    nil
+			    nil)
+		      into)))
+
+(define (http.get-proxy from into)
+  (let ((j (string-search ":" *http-proxy*)))
+    (if j
+	(begin (set! *http-server-host* (substring *http-proxy* 0 j))
+	       (set! *http-server-port* (string->number
+					 (substring *http-proxy* (+ j 1)))))
+      (set! *http-server-host* *http-proxy*)))
+  (print (list *http-server-host*
+	       *http-server-port*))
+  (http-handle-data (http from "GET" nil nil) into))
+
+
+(define (http-handle-data data into)
+  (if (or (> (verbose) 1)
+	  *show-header*)
+      (let ((l data))
+	(while (and l (car l))
+	  (writes nil (car l) "\n")
+	  (set! l (cdr l)))
+	(writes nil "\n")))
+  (let ((stream (and into (fopen into "w")))
+	(l (cdr (memq nil data))))
+    (while l
+      (fwrite (car l) stream)
+      (set! l (cdr l)))
+    (and stream (fclose stream))))
+
+(define *url-pat* (regcomp "(.*)://([^/]*)([^?]*)(.*)"
+			   REG_EXTENDED))
+
+(define (parse-url str)
+  (let ((match (regexec *url-pat* str)))
+    (define (chunk n)
+      (substring str (car (nth n match)) (cdr (nth n match))))
+    (cond ((not (pair? match))
+	   (error (string-append "parsing URL: "
+				 (regerror match *url-pat*))))
+	  ('else
+	   (list (cons 'service (chunk 1))
+		 (cons 'node (chunk 2))
+		 (cons 'ident (chunk 3))
+		 (cons 'arg (chunk 4)))))))

@@ -1,0 +1,66 @@
+
+
+
+HTTP-GET(1C)                                                     HTTP-GET(1C)
+
+
+
+NAME
+  http-get - simple http client and siod example program
+
+SYNOPSIS
+  http-get url [output-file] [:proxy=name] [:header=true] [:username=xx]
+  [:password=xx]
+
+DESCRIPTION
+  http-get is a simple http command-client which demonstrates the use of siod
+  socket and regular expression capabilities.
+
+
+  COMMAND LINE OPTIONS
+
+
+  :proxy=XXXXX
+          The XXXXX is the name of the proxy server followed by a colon and a
+          port number.
+
+  :header=XXXXX
+          The XXXXX should be the string true, and causes the http headers to
+          be output along with the content.
+
+  :username=XXXXX
+          The XXXXXX is the plain text username to transmit using basic
+          authentication.
+
+  :password=XXXXX
+          The XXXXX is the plaintext password.
+
+FILES
+  http-get http-stress.scm
+
+SEE ALSO
+  siod
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
