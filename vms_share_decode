@@ -7,8 +7,8 @@ import os
 import re
 import sys
 
-CWD = os.path.abspath(os.path.dirname(__file__))
-ROOT = os.path.join(CWD, 'sources')
+# verify looks like a vms_share archive
+RE_SHARE = re.compile('^\$!.+ created by VMS_SHARE .+$', re.M)
 
 # backtick escape pattern
 RE_ESC = re.compile('(`\d+)', re.M)
@@ -17,22 +17,36 @@ def esc(m):
     return chr(int(m.group(0)[1:]))
 
 def main():
-    # prep output dir
-    if not os.path.exists(ROOT):
-        os.makedirs(ROOT)
+    args = sys.argv[1:]
+    if not args:
+        print('Usage %s archive.txt' % sys.argv[0])
+        sys.exit(1)
+
+    # find parent directory
+    archive = args[0]
+    parent = os.path.abspath(os.path.dirname(archive))
 
     # read 7-bit ascii data
-    raw = open('archive.txt', 'rb').read().decode('ascii')
+    raw = open(archive, 'rb').read().decode('ascii')
+
+    # sniff for correct file format
+    if not RE_SHARE.findall(raw):
+        print('Error: %r does not look like a VMS_SHARE archive' % archive)
+        sys.exit(1)
+
+    # create output directory
+    root = os.path.join(parent, 'sources')
+    if not os.path.exists(root):
+        os.makedirs(root)
 
     # convert 3-digit base-10 escapes to characters
     esc = lambda m: chr(int(m.group(0)[1:]))
     raw = RE_ESC.sub(esc, raw)
 
-    lines = raw.split('\n')
-
     infile = 0
     name = None
     body = ''
+    lines = raw.split('\n')
     for i, line in enumerate(lines):
         # skip empty lines
         if not line:
@@ -59,7 +73,7 @@ def main():
         elif line[0] == '$' and infile:
             # found end of blob data, write output
             infile = 0
-            path = os.path.join(ROOT, name)
+            path = os.path.join(root, name)
             print('writing %r' % name)
             out = open(path, 'wb')
             out.write(body.encode('utf-8'))
