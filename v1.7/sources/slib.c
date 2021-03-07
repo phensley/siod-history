@@ -1,4 +1,5 @@
-/* Scheme In One Defun, but in C this time. 
+/* Scheme In One Defun, but in C this time.
+ 
  * COPYRIGHT (c) 1988-1992 BY *
  * PARADIGM ASSOCIATES INCORPORATED, CAMBRIDGE, MASSACHUSETTS. *
  *			 ALL RIGHTS RESERVED *

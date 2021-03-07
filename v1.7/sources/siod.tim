@@ -1,4 +1,5 @@
-Here are some timings taken with version 1.3 of SIOD. The new version 1.5is slightly faster. If you do timings it is interesting to try it
+Here are some timings taken with version 1.3 of SIOD. The new version 1.5
+is slightly faster. If you do timings it is interesting to try it
 with and without the mark-and-sweep GC, and with various heap sizes.
 
 Please report both total and GC times, heap size, and kinds of GC's used
