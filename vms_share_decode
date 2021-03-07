@@ -63,7 +63,7 @@ def main():
             line = line[1:]
             if not infile:
                 # start new file
-                body = line
+                body = line + '\n'
                 infile = 1
                 continue
 
