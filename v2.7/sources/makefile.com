@@ -1,4 +1,5 @@
-$ CFLAGS = ""$ LFLAGS = ""
+$ CFLAGS = ""
+$ LFLAGS = ""
 $!
 $ CC'CFLAGS'   SLIB.C
 $ CC'CFLAGS'   SLIBA.C

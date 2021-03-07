@@ -1,1 +1,2 @@
-IDENTIFICATION = "SIOD 2.6"sys$library:vaxcrtl/share
+IDENTIFICATION = "SIOD 2.6"
+sys$library:vaxcrtl/share

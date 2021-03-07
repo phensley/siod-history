@@ -1,4 +1,5 @@
-;; -*-mode:lisp-*-;;
+;; -*-mode:lisp-*-
+;;
 M
 ;; Siod version 2.4 may be obtained by anonymous FTP to BU.EDU (128.197.2.6)
 ;; Get the file users/gjc/siod-v2.4-shar

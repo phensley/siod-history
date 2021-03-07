@@ -1,4 +1,5 @@
-/* Code specific to Lightspeed C on MacIntosh.   This detects that the character APPLE-DOT is depressed,
+/* Code specific to Lightspeed C on MacIntosh.
+   This detects that the character APPLE-DOT is depressed,
    and then expects that sending a newline to the console
    will invoke the proper signal handling code. 
 

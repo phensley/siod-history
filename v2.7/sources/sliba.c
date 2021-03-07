@@ -1,4 +1,5 @@
-/*   *                   COPYRIGHT (c) 1988-1992 BY                             *
+/*  
+ *                   COPYRIGHT (c) 1988-1992 BY                             *
  *        PARADIGM ASSOCIATES INCORPORATED, CAMBRIDGE, MASSACHUSETTS.       *
  *        See the source file SLIB.C for more information.                  *
 
